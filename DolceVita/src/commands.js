@@ -1,0 +1,326 @@
+const { ChannelType, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
+
+module.exports = [
+  new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('List all bot commands.'),
+  new SlashCommandBuilder()
+    .setName('setup')
+    .setDescription('Choose the channel for public order posts.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addChannelOption((option) => option
+      .setName('channel')
+      .setDescription('Text channel where new orders will be posted')
+      .setRequired(true)
+      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement))
+    .addRoleOption((option) => option
+      .setName('staff_role')
+      .setDescription('Optional role allowed to claim, complete, and cancel orders')),
+  new SlashCommandBuilder()
+    .setName('set')
+    .setDescription('Configure bot channels.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addSubcommand((subcommand) => subcommand
+      .setName('vouch')
+      .setDescription('Choose where vouches are posted.')
+      .addChannelOption((option) => option
+        .setName('channel')
+        .setDescription('Channel for public vouch embeds')
+        .setRequired(true)
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('ticket_transcript')
+      .setDescription('Choose where closed ticket transcripts are posted.')
+      .addChannelOption((option) => option
+        .setName('channel')
+        .setDescription('Channel for closed ticket transcripts')
+        .setRequired(true)
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('voided')
+      .setDescription('Choose where warranty-void notices are posted.')
+      .addChannelOption((option) => option
+        .setName('channel')
+        .setDescription('Channel for voided-order alerts')
+        .setRequired(true)
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('voided_role')
+      .setDescription('Choose the role assigned when an order is completed.')
+      .addRoleOption((option) => option
+        .setName('role')
+        .setDescription('Role assigned on completion and removed after a vouch within 12 hours')
+        .setRequired(true))),
+  new SlashCommandBuilder()
+    .setName('setowner')
+    .setDescription('Choose the role allowed to manage orders and close tickets.')
+    .addRoleOption((option) => option
+      .setName('role')
+      .setDescription('Role allowed to process, complete, cancel orders, and close tickets')
+      .setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('setadmin')
+    .setDescription('Choose the role allowed to use order commands and close tickets.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addRoleOption((option) => option
+      .setName('role')
+      .setDescription('Role allowed to submit, claim orders, and close tickets')
+      .setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('setorder')
+    .setDescription('Choose where order embeds are posted.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addChannelOption((option) => option
+      .setName('channel')
+      .setDescription('Channel where new orders will be sent')
+      .setRequired(true)
+      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
+  new SlashCommandBuilder()
+    .setName('voidedchannel')
+    .setDescription('Choose where warranty-void notices are posted.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addChannelOption((option) => option
+      .setName('channel')
+      .setDescription('Channel for warranty-void notices')
+      .setRequired(true)
+      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
+  new SlashCommandBuilder()
+    .setName('order')
+    .setDescription('Submit an order to the public queue.')
+    .addStringOption((option) => option
+      .setName('items')
+      .setDescription('What items would you like to buy?')
+      .setRequired(true)
+      .setMaxLength(1024))
+    .addStringOption((option) => option
+      .setName('payment_method')
+      .setDescription('How will you pay?')
+      .setRequired(true)
+      .setMaxLength(100))
+    .addUserOption((option) => option
+      .setName('supporter')
+      .setDescription('Staff member supporting this order')
+      .setRequired(true))
+    .addIntegerOption((option) => option
+      .setName('quantity')
+      .setDescription('How many?')
+      .setRequired(true)
+      .setMinValue(1)
+      .setMaxValue(9999)),
+  new SlashCommandBuilder()
+    .setName('payment')
+    .setDescription('Send the payment reminder in this ticket.'),
+  new SlashCommandBuilder()
+    .setName('queue')
+    .setDescription('Post the order confirmation for the latest order in this channel.'),
+  new SlashCommandBuilder()
+    .setName('queuelist')
+    .setDescription('Display active orders in the order they were submitted.'),
+  new SlashCommandBuilder()
+    .setName('claim')
+    .setDescription('Claim the next waiting order.'),
+  new SlashCommandBuilder()
+    .setName('solving')
+    .setDescription('Multiply two numbers.')
+    .addNumberOption((option) => option
+      .setName('amount_one')
+      .setDescription('First amount')
+      .setRequired(true))
+    .addNumberOption((option) => option
+      .setName('amount_two')
+      .setDescription('Second amount')
+      .setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('message')
+    .setDescription('Post a message as the bot.')
+    .addStringOption((option) => option
+      .setName('text')
+      .setDescription('Message to post')
+      .setRequired(true)
+      .setMaxLength(2000))
+    .addChannelOption((option) => option
+      .setName('channel')
+      .setDescription('Channel to post in; defaults to this channel')
+      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
+  new SlashCommandBuilder()
+    .setName('robuxform')
+    .setDescription('Post the Robux fill-up form.'),
+  new SlashCommandBuilder()
+    .setName('openshop')
+    .setDescription('Post the shop-open announcement.'),
+  new SlashCommandBuilder()
+    .setName('closeshop')
+    .setDescription('Post the shop-closed announcement.'),
+  new SlashCommandBuilder()
+    .setName('dmsuser')
+    .setDescription('Send a private message to a user.')
+    .addUserOption((option) => option
+      .setName('user')
+      .setDescription('User to message')
+      .setRequired(true))
+    .addStringOption((option) => option
+      .setName('reply')
+      .setDescription('Message to send')
+      .setRequired(true)
+      .setMaxLength(2000)),
+  new SlashCommandBuilder()
+    .setName('dmsorder')
+    .setDescription('Send an order and warranty message to a user.')
+    .addUserOption((option) => option
+      .setName('user')
+      .setDescription('Buyer to message')
+      .setRequired(true))
+    .addStringOption((option) => option
+      .setName('item')
+      .setDescription('Item name')
+      .setRequired(true)
+      .setMaxLength(200))
+    .addStringOption((option) => option
+      .setName('link')
+      .setDescription('Order link to include as a spoiler')
+      .setRequired(true)
+      .setMaxLength(1024)),
+  new SlashCommandBuilder()
+    .setName('vouch')
+    .setDescription('Leave a public vouch.')
+    .addStringOption((option) => option
+      .setName('items')
+      .setDescription('Items being vouched for')
+      .setRequired(true)
+      .setMaxLength(1024))
+    .addStringOption((option) => option
+      .setName('feedback')
+      .setDescription('Your feedback')
+      .setRequired(true)
+      .setMaxLength(1024))
+    .addAttachmentOption((option) => option
+      .setName('proof')
+      .setDescription('First proof image')
+      .setRequired(true))
+    .addAttachmentOption((option) => option
+      .setName('proof2')
+      .setDescription('Second proof image')),
+  new SlashCommandBuilder()
+    .setName('checkvouch')
+    .setDescription('Check a user vouch history.')
+    .addUserOption((option) => option
+      .setName('user')
+      .setDescription('User to check; defaults to you')),
+  new SlashCommandBuilder()
+    .setName('giveaway')
+    .setDescription('Manage server giveaways.')
+    .addSubcommand((subcommand) => subcommand
+      .setName('start')
+      .setDescription('Start a giveaway in this channel.')
+      .addStringOption((option) => option
+        .setName('prize')
+        .setDescription('What the winner will receive')
+        .setRequired(true)
+        .setMaxLength(256))
+      .addUserOption((option) => option
+        .setName('host')
+        .setDescription('Giveaway host')
+        .setRequired(true))
+      .addStringOption((option) => option
+        .setName('duration')
+        .setDescription('Giveaway duration, such as 30m, 12h, or 7d')
+        .setRequired(true)
+        .setMaxLength(20))
+      .addIntegerOption((option) => option
+        .setName('winners')
+        .setDescription('Number of winners to select')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(100))
+      .addIntegerOption((option) => option
+        .setName('message_count')
+        .setDescription('Minimum tracked messages required to join')
+        .setMinValue(1)
+        .setMaxValue(100000))
+      .addChannelOption((option) => option
+        .setName('message_channel')
+        .setDescription('Channel where required messages must be tracked')
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement))
+      .addStringOption((option) => option
+        .setName('messagerequirements')
+        .setDescription('Additional entry requirement instructions')
+        .setMaxLength(500))
+      .addStringOption((option) => option
+        .setName('override_req_roles')
+        .setDescription('Comma-separated role mentions or IDs; only these roles may join')
+        .setMaxLength(1000)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('end')
+      .setDescription('End a giveaway and select winners.')
+      .addStringOption((option) => option
+        .setName('message_id')
+        .setDescription('Message ID of the giveaway')
+        .setRequired(true)
+        .setMaxLength(20)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('reroll')
+      .setDescription('Select replacement winner(s) for a giveaway.')
+      .addStringOption((option) => option
+        .setName('message_id')
+        .setDescription('Message ID of the giveaway')
+        .setRequired(true)
+        .setMaxLength(20)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('ban')
+      .setDescription('Ban a user from joining any giveaway.')
+      .addUserOption((option) => option
+        .setName('user')
+        .setDescription('User to ban from giveaways')
+        .setRequired(true)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('banned')
+      .setDescription('List users banned from giveaways.')),
+  new SlashCommandBuilder()
+    .setName('stickymessage')
+    .setDescription('Configure a channel sticky message.')
+    .addSubcommand((subcommand) => subcommand
+      .setName('set')
+      .setDescription('Set the sticky message for a channel.')
+      .addStringOption((option) => option
+        .setName('text')
+        .setDescription('Message to keep at the bottom of the channel')
+        .setRequired(true)
+        .setMaxLength(2000))
+      .addChannelOption((option) => option
+        .setName('channel')
+        .setDescription('Channel to set; defaults to this channel')
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)))
+    .addSubcommand((subcommand) => subcommand
+      .setName('remove')
+      .setDescription('Remove the sticky message from a channel.')
+      .addChannelOption((option) => option
+        .setName('channel')
+        .setDescription('Channel to clear; defaults to this channel')
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement))),
+  new SlashCommandBuilder()
+    .setName('ticketsetup')
+    .setDescription('Post the ticket panel in this channel.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addRoleOption((option) => option
+      .setName('staff_role')
+      .setDescription('Optional role that can view tickets; /setadmin or /setowner roles manage them')),
+  new SlashCommandBuilder()
+    .setName('ticket')
+    .setDescription('Configure ticket panels.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addSubcommand((subcommand) => subcommand
+      .setName('setup')
+      .setDescription('Post the ticket panel in this channel.')
+      .addRoleOption((option) => option
+        .setName('staff_role')
+        .setDescription('Optional role that can view tickets; /setadmin or /setowner roles manage them'))),
+  new SlashCommandBuilder()
+    .setName('setupticketcategory')
+    .setDescription('Choose the category for new ticket channels.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addStringOption((option) => option
+      .setName('category_id')
+      .setDescription('ID of the category where new tickets will be created')
+      .setRequired(true)
+      .setMaxLength(20)),
+].map((command) => command.toJSON());
