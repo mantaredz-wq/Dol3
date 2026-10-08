@@ -13,7 +13,7 @@ const EMPTY_STATE = {
 };
 const ORDER_ACTIVE_DURATION_MS = 48 * 60 * 60 * 1000;
 const VOUCH_WINDOW_MS = 12 * 60 * 60 * 1000;
-const DEFAULT_STORE_FILE = path.join(path.resolve(__dirname, '..', '..'), 'data', 'orders.json');
+const DEFAULT_STORE_FILE = path.join(path.resolve(__dirname, '..'), 'data', 'orders.json');
 
 function expireActiveOrders(state, now = Date.now()) {
   let changed = false;
