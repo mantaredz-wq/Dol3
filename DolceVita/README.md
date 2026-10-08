@@ -50,6 +50,6 @@ All bot message responses and posts use colorless Discord Components V2 containe
 - `/setorder channel:#orders` can be run by a server administrator to choose where new order embeds are posted. Each order also shows the channel where `/order` was submitted.
 - `/setup channel:<channel> staff_role:<optional>` changes the public order channel and staff role.
 
-Order and server setup data are stored in `data/orders.json` on disk. Back up that file to preserve the queue between deployments.
+Order and server setup data are stored in the repo-level `data/orders.json` file on disk, not inside the `DolceVita` project folder. Back up that file to preserve the queue between deployments.
 
 Run `npm test` for the order-store checks.
