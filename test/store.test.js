@@ -138,7 +138,7 @@ test('claim returns null when there are no pending orders', () => {
   assert.equal(store.claimNext('guild-1', 'staff-1'), null);
 });
 
-test('latest order lookup is scoped to its guild and source channel', () => {
+test('latest order lookup is scoped to its guild, source channel, and optional ticket owner', () => {
   const store = createStore();
   const first = store.addOrder({
     guildId: 'guild-1', customerId: 'buyer-1', sourceChannelId: 'ticket-1',
@@ -148,8 +148,15 @@ test('latest order lookup is scoped to its guild and source channel', () => {
     guildId: 'guild-1', customerId: 'buyer-1', sourceChannelId: 'ticket-1',
     items: 'BOBUX', paymentMethod: 'GCash', supporterId: 'supporter-1', preparedById: 'staff-2', quantity: 2,
   });
+  const otherBuyer = store.addOrder({
+    guildId: 'guild-1', customerId: 'buyer-2', sourceChannelId: 'ticket-1',
+    items: 'PREMS', paymentMethod: 'GCash', supporterId: 'supporter-1', preparedById: 'staff-2', quantity: 1,
+  });
 
-  assert.equal(store.getLatestOrderForSource('guild-1', 'ticket-1').id, second.id);
+  assert.equal(store.getLatestOrderForSource('guild-1', 'ticket-1').id, otherBuyer.id);
+  assert.equal(store.getLatestOrderForSource('guild-1', 'ticket-1', 'buyer-1').id, second.id);
+  assert.equal(store.getLatestOrderForSource('guild-1', 'ticket-1', 'buyer-2').id, otherBuyer.id);
+  assert.equal(store.getLatestOrderForSource('guild-1', 'ticket-1', 'buyer-3'), null);
   assert.equal(store.getLatestOrderForSource('guild-2', 'ticket-1'), null);
   assert.equal(store.getLatestOrderForSource('guild-1', 'ticket-2'), null);
 });
@@ -362,6 +369,32 @@ test('vouches persist and are counted only for the requested user and server', (
   const vouches = restartedStore.listVouches('guild-1', 'user-1');
   assert.equal(vouches.length, 2);
   assert.deepEqual(vouches.map((vouch) => vouch.items).sort(), ['Latte', 'Tea']);
+});
+
+test('only one vouch can be recorded for each ticket', () => {
+  const store = createStore();
+  const firstVouch = store.addVouch({
+    guildId: 'guild-1',
+    userId: 'buyer-1',
+    items: 'BOBUX',
+    ticketChannelId: 'ticket-1',
+  });
+
+  assert.ok(firstVouch);
+  assert.equal(store.hasVouchForTicket('guild-1', 'ticket-1'), true);
+  assert.equal(store.hasVouchForTicket('guild-2', 'ticket-1'), false);
+  assert.equal(store.addVouch({
+    guildId: 'guild-1',
+    userId: 'buyer-1',
+    items: 'PREMS',
+    ticketChannelId: 'ticket-1',
+  }), null);
+  assert.ok(store.addVouch({
+    guildId: 'guild-1',
+    userId: 'buyer-1',
+    items: 'PREMS',
+    ticketChannelId: 'ticket-2',
+  }));
 });
 
 test('vouch validity is limited to the completed order 12-hour window', () => {

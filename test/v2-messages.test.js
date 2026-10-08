@@ -65,19 +65,17 @@ test('interaction replies and message replies are wrapped as V2 payloads', async
   assert.equal(messageReply.flags & MessageFlags.IsComponentsV2, MessageFlags.IsComponentsV2);
 });
 
-test('DM vouch shortcut button redirects to the app flow instead of the public channel URL', () => {
-  const button = vouchLinkButton('guild-1', 'channel-2').components[0].toJSON();
+test('DM vouch shortcut button is bound to its ticket instead of the public channel URL', () => {
+  const button = vouchLinkButton('guild-1', 'ticket-2').components[0].toJSON();
   assert.equal(button.type, 2);
   assert.equal(button.style, 1);
-  assert.equal(button.custom_id, 'vouch:shortcut:guild-1:channel-2');
+  assert.equal(button.custom_id, 'vouch:shortcut:guild-1:ticket-2');
   assert.equal(button.url, undefined);
 });
 
 test('Robux and shop announcement builders return colorless V2 containers', () => {
   const cases = [
     [robuxFormContainer(), /RBX FILL UP FORM/],
-    [openShopContainer(), /Dolce Vita is now __open__/],
-    [closeShopContainer(), /Dolce Vita is now __closed__/],
   ];
 
   for (const [builder, expectedText] of cases) {
@@ -86,4 +84,29 @@ test('Robux and shop announcement builders return colorless V2 containers', () =
     assert.equal(container.accent_color, undefined);
     assert.match(container.components[0].content, expectedText);
   }
+});
+
+test('close-shop container has the requested notice and announcement button', () => {
+  const container = closeShopContainer().toJSON();
+  assert.equal(container.type, 17);
+  assert.match(container.components[0].content, /Dolce Vita is now closed/);
+  assert.match(container.components[0].content, /we're currently closed but you still can create a ticket/);
+  assert.match(container.components[0].content, /what happened\?/);
+  assert.match(container.components[0].content, /what can I do\?/);
+  const buttonRow = container.components[1];
+  assert.equal(buttonRow.type, 1);
+  assert.deepEqual(buttonRow.components.map(({ label, style, url }) => [label, style, url]), [
+    ['Announcement', 5, 'https://discord.com/channels/1555578509743755306/1555826478522835014'],
+  ]);
+});
+
+test('open-shop container has an Order Here link button inside the container', () => {
+  const container = openShopContainer().toJSON();
+  assert.equal(container.type, 17);
+  assert.match(container.components[0].content, /Dolce Vita is now __open__/);
+  const buttonRow = container.components[1];
+  assert.equal(buttonRow.type, 1);
+  assert.deepEqual(buttonRow.components.map(({ label, style, url }) => [label, style, url]), [
+    ['Order Here', 5, 'https://discord.com/channels/1555578509743755306/1555625940111855697'],
+  ]);
 });

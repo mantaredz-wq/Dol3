@@ -14,14 +14,16 @@ const {
   helpEmbed,
   multiplicationContainer,
   paymentReminderContainer,
+  paymentDetailsEmbed,
   vouchEmbed,
   vouchPreviewButtons,
-  paymentDetailsEmbed,
   orderTicketTermsContainer,
   vouchLinkButton,
   orderCompletionReminderEmbed,
   warrantyActivatedMessage,
   dmsOrderMessage,
+  vouchReminderContainer,
+  vouchFormModal,
 } = require('../src/embeds');
 const commands = require('../src/commands');
 const { ticketChannelName } = require('../src/ticket-names');
@@ -567,27 +569,55 @@ test('completed order reminder embed has no title and the warranty policy descri
     '› Replacements will only be provided for verified issues covered by warranty.',
     '› Once the warranty expires, the shop is no longer responsible for issues covered by the expired warranty.',
     '› NO VOUCH = no refund, no replacement & no warranty.',
-    '› TYPE /vouch TO VOUCH DOLCE VITA.',
+    '› VOUCH IN YOUR ACTIVE ORDER TICKET.',
   ].join('\n'));
 });
 
 test('buyer warranty DM after vouch includes the activated warranty and order details', () => {
-  const message = warrantyActivatedMessage({ username: 'alice' }, '1 Deco', new Date('2026-10-04T22:53:00Z'));
+  const message = warrantyActivatedMessage(
+    { id: '1329447441128230962', username: 'alice' },
+    'Bobux',
+    new Date('2026-10-04T22:53:00Z'),
+  );
 
   assert.match(message, /WARRANTY ACTIVATED/i);
+  assert.match(message, /<a:vitacheck:1557378165457027072>/);
   assert.match(message, /applies only to \(nitro, premium subs, svboosts\)/i);
-  assert.match(message, /@alice/);
-  assert.match(message, /1 Deco/);
-  assert.match(message, /date vouched:/i);
+  assert.match(message, /<@1329447441128230962>/);
+  assert.match(message, /🍩   \*\*order details\*\*/);
+  assert.match(message, /⧽ Bobux/);
+  assert.match(message, /October 05, 2026 at 6:53 AM PHT \(UTC\+8\)/);
   assert.match(message, /proof:/i);
 });
 
-test('completion DM vouch button acts as a shortcut to the /vouch flow', () => {
-  const button = vouchLinkButton('guild-123', 'channel-456').toJSON().components[0];
+test('completion DM puts the vouch shortcut button inside the reminder container', () => {
+  const container = vouchReminderContainer('guild-123', 'ticket-456').toJSON();
+  const button = container.components[1].components[0];
+  assert.equal(container.type, 17);
+  assert.match(container.components[0].content, /CLICK “Vouch now” TO VOUCH DOLCE VITA/);
   assert.equal(button.label, 'Vouch now');
   assert.equal(button.style, 1);
-  assert.equal(button.custom_id, 'vouch:shortcut:guild-123:channel-456');
+  assert.equal(button.custom_id, 'vouch:shortcut:guild-123:ticket-456');
   assert.equal(button.url, undefined);
+});
+
+test('DM vouch shortcut opens a form with order details and proof upload', () => {
+  const modal = vouchFormModal('guild-123', 'ticket-456').toJSON();
+  assert.equal(modal.custom_id, 'vouch:form:guild-123:ticket-456');
+  assert.equal(modal.title, 'VOUCH FORM');
+  assert.deepEqual(modal.components.map(({ label }) => label), [
+    'PRODUCT',
+    'QUANTITY',
+    'FEEDBACK',
+    'PROOF IMAGES',
+  ]);
+  assert.deepEqual(modal.components[3].component, {
+    type: 19,
+    custom_id: 'proofs',
+    min_values: 1,
+    max_values: 2,
+    required: true,
+  });
 });
 
 test('removed order and voided-role message shortcuts are not recognized', () => {
@@ -846,7 +876,7 @@ test('ticket transcript text preserves message order, content, and attachment li
   assert.match(transcript, /proof\.png \(https:\/\/example\.test\/proof\.png\)/);
 });
 
-test('ticket transcript attachments keep a .txt extension for channel and DM copies', () => {
+test('ticket transcript attachments keep a .txt extension for the configured channel copy', () => {
   const attachment = ticketTranscriptAttachment('support-ticket', 'hello world');
   assert.equal(attachment.name, 'support-ticket-transcript.txt');
   assert.equal(Buffer.from(attachment.attachment).toString('utf8'), 'hello world');

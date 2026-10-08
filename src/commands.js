@@ -112,7 +112,7 @@ module.exports = [
     .setDescription('Send the payment reminder in this ticket.'),
   new SlashCommandBuilder()
     .setName('queue')
-    .setDescription('Post the order confirmation for the latest order in this channel.'),
+    .setDescription("Post the active ticket owner's order confirmation."),
   new SlashCommandBuilder()
     .setName('queuelist')
     .setDescription('Display active orders in the order they were submitted.'),
@@ -182,7 +182,7 @@ module.exports = [
       .setMaxLength(1024)),
   new SlashCommandBuilder()
     .setName('vouch')
-    .setDescription('Leave a public vouch.')
+    .setDescription('Leave a vouch from your active order ticket (ticket owner only).')
     .addStringOption((option) => option
       .setName('items')
       .setDescription('Items being vouched for')

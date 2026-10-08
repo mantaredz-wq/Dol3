@@ -4,6 +4,8 @@ const {
   ButtonStyle,
   ContainerBuilder,
   EmbedBuilder,
+  FileUploadBuilder,
+  LabelBuilder,
   MediaGalleryBuilder,
   MediaGalleryItemBuilder,
   MessageFlags,
@@ -60,11 +62,65 @@ function orderTicketTermsContainer(accepted = false) {
     ));
 }
 
-function vouchLinkButton(guildId, channelId) {
+function vouchLinkButton(guildId, ticketChannelId) {
   return new ActionRowBuilder().addComponents(new ButtonBuilder()
-    .setCustomId(`vouch:shortcut:${guildId}:${channelId ?? 'all'}`)
+    .setCustomId(`vouch:shortcut:${guildId}:${ticketChannelId}`)
     .setLabel('Vouch now')
     .setStyle(ButtonStyle.Primary));
+}
+
+function vouchReminderContainer(guildId, ticketChannelId) {
+  const reminder = orderCompletionReminderEmbed().toJSON();
+  const description = reminder.description.replace(
+    '› VOUCH IN YOUR ACTIVE ORDER TICKET.',
+    '› CLICK “Vouch now” TO VOUCH DOLCE VITA.',
+  );
+  return new ContainerBuilder()
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(description))
+    .addActionRowComponents(vouchLinkButton(guildId, ticketChannelId));
+}
+
+function vouchFormModal(guildId, ticketChannelId) {
+  return new ModalBuilder()
+    .setCustomId(`vouch:form:${guildId}:${ticketChannelId}`)
+    .setTitle('VOUCH FORM')
+    .addLabelComponents(
+      new LabelBuilder({
+        label: 'PRODUCT',
+        component: new TextInputBuilder()
+          .setCustomId('product')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('DEKOR / BOBUX / SVBOWCH / PREMS')
+          .setMaxLength(20)
+          .setRequired(true),
+      }),
+      new LabelBuilder({
+        label: 'QUANTITY',
+        component: new TextInputBuilder()
+          .setCustomId('quantity')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('1-9999')
+          .setMaxLength(4)
+          .setRequired(true),
+      }),
+      new LabelBuilder({
+        label: 'FEEDBACK',
+        component: new TextInputBuilder()
+          .setCustomId('feedback')
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(1024)
+          .setRequired(true),
+      }),
+      new LabelBuilder({
+        label: 'PROOF IMAGES',
+        description: 'Upload one or two proof images.',
+        component: new FileUploadBuilder()
+          .setCustomId('proofs')
+          .setMinValues(1)
+          .setMaxValues(2)
+          .setRequired(true),
+      }),
+    );
 }
 
 function orderStatusEmbed(order) {
@@ -135,18 +191,47 @@ function openShopContainer() {
       '→  [Discord Items - Dekor & Sv Boost](https://discord.com/channels/1555578509743755306/1555581838544609430)',
       '→  [Premmies](https://discord.com/channels/1555578509743755306/1555826478522835014) - Soon',
       '→  [Gamecredits](https://discord.com/channels/1555578509743755306/1555826478522835014) - Soon',
-    ].join('\n')));
+    ].join('\n')))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel('Order Here')
+        .setStyle(ButtonStyle.Link)
+        .setURL('https://discord.com/channels/1555578509743755306/1555625940111855697'),
+    ));
 }
 
 function closeShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      '@𓏲﹕     dolcezza',
       '_ _',
-      '🔴  **Dolce Vita is now __closed__**',
+      ':candy:   **Dolce Vita is now closed**',
       '',
-      'Thank you for your support. Please check back later!',
-    ].join('\n')));
+      'Thank you to everyone who supported Dolce Vita,',
+      'We appreciate all of you.',
+      '',
+      "we're currently closed but you still can create a ticket",
+      '',
+      'if you create a ticket while closed please wait for',
+      'Dolce Vita Staff to open the shop and assist you.',
+      '═════════════════════',
+      '⟢ please keep an eye on our [Announcement](https://discord.com/channels/1555578509743755306/1555826478522835014) channel for updates on our next opening.',
+      '═════════════════════',
+      '**what happened?**',
+      "> we're busy/sleeping or at school/work, and improving our services",
+      "> to serve y'all better",
+      '',
+      '**what can I do?**',
+      '→ [check the pricelist](https://discord.com/channels/1555578509743755306/1555581838544609430)',
+      '→ [check the rules](https://discord.com/channels/1555578509743755306/1556310915643867226)',
+      '→ [inquire channel](https://discord.com/channels/1555578509743755306/1555592238690598943)',
+      'thank you for patience and understanding. See you soon!!',
+    ].join('\n')))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel('Announcement')
+        .setStyle(ButtonStyle.Link)
+        .setURL('https://discord.com/channels/1555578509743755306/1555826478522835014'),
+    ));
 }
 
 function giveawayContainer(giveaway, ended = false) {
@@ -224,27 +309,27 @@ function warrantyActivatedMessage(user, items, vouchedAt = new Date()) {
     timeZone: 'Asia/Manila',
     timeZoneName: 'short',
   }).format(vouchedAt).replace('GMT+8', 'PHT (UTC+8)');
-  const username = user?.username ?? 'user';
+  const userId = user?.id ?? 'unknown';
   return [
-    ':blank:        :vitacheck:    **WARRANTY ACTIVATED *!***',
+    '<:blank:1557365898216611841>         <a:vitacheck:1557378165457027072>     **WARRANTY ACTIVATED *!***',
     '_ _',
     '        ⧽ applies only to (nitro, premium subs, svboosts)',
-    '        ⧽ you may ignore this if you purchased discord items',
-    '        ⧽ present this if your item gets **revoked**',
-    '_ _',
-    '-# _ _     Deleting this message will automatically void the warranty',
+    '                ⧽ you may ignore this if you purchased discord items',
+    '                        ⧽ present this if your item gets **revoked**',
+    '                        _ _',
+    '                        -# _ _     Deleting this message will automatically void the warranty',
     '',
-    '════════════════════════',
+    '                        ════════════════════════',
     '<:blank:1557365898216611841>',
-    '<:blank:1557365898216611841> :doughnut:   **order details**',
+    '<:blank:1557365898216611841> 🍩   **order details**',
     '',
     '୭ ˚. ᵎᵎ **buyer:**',
-    `         ⧽ @${username}`,
-    '୭ ˚. ᵎᵎ  item:',
-    `         ⧽ ${items}`,
-    '୭ ˚. ᵎᵎ  date vouched:',
-    `         ⧽ ${date}`,
-    '୭ ˚. ᵎᵎ  proof:',
+    `         ⧽ <@${userId}>`,
+    '         ୭ ˚. ᵎᵎ  item:',
+    `                  ⧽ ${items}`,
+    '                  ୭ ˚. ᵎᵎ  date vouched:',
+    `                           ⧽ ${date}`,
+    '                           ୭ ˚. ᵎᵎ  proof:',
   ].join('\n');
 }
 
@@ -257,7 +342,7 @@ function orderCompletionReminderEmbed() {
       '› Replacements will only be provided for verified issues covered by warranty.',
       '› Once the warranty expires, the shop is no longer responsible for issues covered by the expired warranty.',
       '› NO VOUCH = no refund, no replacement & no warranty.',
-      '› TYPE /vouch TO VOUCH DOLCE VITA.',
+      '› VOUCH IN YOUR ACTIVE ORDER TICKET.',
     ].join('\n'));
 }
 
@@ -622,6 +707,8 @@ module.exports = {
   paymentReminderButtons,
   orderTicketTermsContainer,
   vouchLinkButton,
+  vouchReminderContainer,
+  vouchFormModal,
   vouchPreviewButtons,
   orderTicketModal,
   othersTicketModal,

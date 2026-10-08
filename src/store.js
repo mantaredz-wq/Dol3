@@ -55,19 +55,35 @@ class OrderStore {
     this.write(state);
   }
 
-  addVouch({ guildId, userId, items, createdAt = new Date().toISOString() }) {
+  addVouch({
+    guildId,
+    userId,
+    items,
+    ticketChannelId,
+    createdAt = new Date().toISOString(),
+  }) {
     const state = this.read();
     state.vouches ??= [];
+    if (ticketChannelId && state.vouches.some((vouch) => (
+      vouch.guildId === guildId && vouch.ticketChannelId === ticketChannelId
+    ))) return null;
     const vouch = {
       id: randomUUID().toUpperCase(),
       guildId,
       userId,
       items,
+      ...(ticketChannelId ? { ticketChannelId } : {}),
       createdAt,
     };
     state.vouches.push(vouch);
     this.write(state);
     return vouch;
+  }
+
+  hasVouchForTicket(guildId, ticketChannelId) {
+    return (this.read().vouches ?? []).some((vouch) => (
+      vouch.guildId === guildId && vouch.ticketChannelId === ticketChannelId
+    ));
   }
 
   listVouches(guildId, userId) {
@@ -263,9 +279,11 @@ class OrderStore {
     return this.read().orders.find((order) => order.id === orderId) ?? null;
   }
 
-  getLatestOrderForSource(guildId, sourceChannelId) {
+  getLatestOrderForSource(guildId, sourceChannelId, customerId) {
     return this.read().orders.reduce((latest, order) => {
-      if (order.guildId !== guildId || order.sourceChannelId !== sourceChannelId) return latest;
+      if (order.guildId !== guildId
+        || order.sourceChannelId !== sourceChannelId
+        || (customerId && order.customerId !== customerId)) return latest;
       return !latest || order.createdAt >= latest.createdAt ? order : latest;
     }, null);
   }
