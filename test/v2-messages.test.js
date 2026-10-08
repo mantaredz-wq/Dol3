@@ -89,6 +89,7 @@ test('Robux and shop announcement builders return colorless V2 containers', () =
 test('close-shop container has the requested notice and announcement button', () => {
   const container = closeShopContainer().toJSON();
   assert.equal(container.type, 17);
+  assert.match(container.components[0].content, /<@&1555603985694588940>/);
   assert.match(container.components[0].content, /Dolce Vita is now closed/);
   assert.match(container.components[0].content, /we're currently closed but you still can create a ticket/);
   assert.match(container.components[0].content, /what happened\?/);
@@ -103,6 +104,7 @@ test('close-shop container has the requested notice and announcement button', ()
 test('open-shop container has an Order Here link button inside the container', () => {
   const container = openShopContainer().toJSON();
   assert.equal(container.type, 17);
+  assert.match(container.components[0].content, /<@&1555603985694588940>/);
   assert.match(container.components[0].content, /Dolce Vita is now __open__/);
   const buttonRow = container.components[1];
   assert.equal(buttonRow.type, 1);

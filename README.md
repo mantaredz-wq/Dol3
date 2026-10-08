@@ -31,8 +31,8 @@ Set the Railway service root directory to the repository root and clear any cust
 - `,calc <number>*<number>` (for example, `,calc 5*5`) sends the result as `5 x 5 = 25` in a Discord Components V2 container, then deletes the command message. The bot needs the **Manage Messages** permission in that channel. The `/solving` slash command remains available.
 - `/message text:<message> channel:<optional>` lets authorized staff post a message as the bot in the current or selected text channel, using a colorless Discord Components V2 container. Mentions are not triggered.
 - `/robuxform` lets authorized staff post the Robux fill-up form in the current channel as a colorless Discord Components V2 container.
-- `/openshop` posts the shop-open announcement as a Discord Components V2 container in the current channel.
-- `/closeshop` posts the shop-closed announcement as a Discord Components V2 container in the current channel, with red “closed” text and blue bold section headings.
+- `/openshop` posts the shop-open announcement as a Discord Components V2 container in the current channel and mentions the shop announcement role.
+- `/closeshop` posts the shop-closed announcement as a Discord Components V2 container in the current channel, with red “closed” text and blue bold section headings, and mentions the shop announcement role.
 - `/dmsuser user:@user reply:<message>` lets authorized staff DM a user in a Discord Components V2 container. Mentions in the reply do not trigger notifications.
 - `/dmsorder user:@user item:<item> link:<url>` lets authorized staff send a buyer the formatted Dolce Vita order and warranty message. The link is spoiler-censored in the DM.
 - `/set vouch channel:#vouches` lets an administrator choose where vouches are posted.

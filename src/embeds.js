@@ -18,6 +18,7 @@ const { orderStatusLabel } = require('./order-status');
 const { orderReference } = require('./order-reference');
 
 const LABELS = { pending: 'Waiting', claimed: 'In progress', completed: 'Completed', cancelled: 'Cancelled', expired: 'Expired' };
+const SHOP_ANNOUNCEMENT_ROLE_ID = '1555603985694588940';
 
 function orderContainer(order) {
   const status = order.status === 'completed'
@@ -179,6 +180,8 @@ function robuxFormContainer() {
 function openShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
+      '',
       '@𓏲﹕     dolcezza',
       '_ _',
       ':candy:  **Dolce Vita is now __open__**',
@@ -203,6 +206,8 @@ function openShopContainer() {
 function closeShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
+      '',
       '_ _',
       ':candy:   **Dolce Vita is now closed**',
       '',
@@ -715,6 +720,7 @@ module.exports = {
   helpEmbed,
   queueEmbed,
   queueConfirmationMessage,
+  SHOP_ANNOUNCEMENT_ROLE_ID,
   dmsOrderMessage,
   reportTicketModal,
   ticketButtons,

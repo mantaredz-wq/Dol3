@@ -35,6 +35,7 @@ const {
   helpEmbed,
   queueEmbed,
   queueConfirmationMessage,
+  SHOP_ANNOUNCEMENT_ROLE_ID,
   dmsOrderMessage,
   reportTicketModal,
   ticketButtons,
@@ -1365,7 +1366,9 @@ async function handleCommand(interaction) {
     await sendV2(channel, {
       components: [container],
       flags: MessageFlags.IsComponentsV2,
-      allowedMentions: { parse: [] },
+      allowedMentions: interaction.commandName === 'robuxform'
+        ? { parse: [] }
+        : { roles: [SHOP_ANNOUNCEMENT_ROLE_ID] },
     });
     return interaction.editReply({ content: `Posted the ${interaction.commandName === 'robuxform' ? 'Robux fill-up form' : `shop ${interaction.commandName === 'openshop' ? 'open' : 'closed'} announcement`}.` });
   }
