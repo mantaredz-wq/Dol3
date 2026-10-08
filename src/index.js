@@ -17,13 +17,12 @@ const {
   orderStatusEmbed,
   orderCompletionReminderEmbed,
   multiplicationContainer,
-  paymentReminderEmbed,
+  paymentReminderContainer,
   vouchEmbed,
   warrantyActivatedMessage,
   vouchPreviewButtons,
   voidedOrderMessage,
   paymentDetailsEmbed,
-  paymentReminderButtons,
   orderTicketTermsContainer,
   vouchLinkButton,
   robuxFormContainer,
@@ -1006,8 +1005,7 @@ async function handleCommand(interaction) {
       return interaction.reply({ content: 'Run `/payment` inside an active ticket.', ephemeral: true });
     }
     await sendV2(interaction.channel, {
-      embeds: [paymentReminderEmbed(interaction.guild?.iconURL())],
-      components: [paymentReminderButtons()],
+      components: [paymentReminderContainer(interaction.guild?.iconURL())],
       allowedMentions: { parse: [] },
     });
     return interaction.reply({ content: 'Payment reminder sent in this ticket.', ephemeral: true });
@@ -1715,8 +1713,7 @@ client.on('messageCreate', async (message) => {
         return;
       }
       await sendV2(message.channel, {
-        embeds: [paymentReminderEmbed(message.guild.iconURL())],
-        components: [paymentReminderButtons()],
+        components: [paymentReminderContainer(message.guild.iconURL())],
         allowedMentions: { parse: [] },
       });
       return;

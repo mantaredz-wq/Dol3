@@ -13,11 +13,10 @@ const {
   ticketCloseReasonModal,
   helpEmbed,
   multiplicationContainer,
-  paymentReminderEmbed,
+  paymentReminderContainer,
   vouchEmbed,
   vouchPreviewButtons,
   paymentDetailsEmbed,
-  paymentReminderButtons,
   orderTicketTermsContainer,
   vouchLinkButton,
   orderCompletionReminderEmbed,
@@ -508,20 +507,35 @@ test('multiplication result is formatted as a colorless V2 container', () => {
   ]);
 });
 
-test('payment reminder embed has the requested description, no title, and server icon thumbnail', () => {
-  const embed = paymentReminderEmbed('https://cdn.example/server.png').toJSON();
-  assert.equal(embed.title, undefined);
-  assert.equal(
-    embed.description,
-    '゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.',
+test('payment reminder V2 container includes the server icon and pay/no buttons inside', () => {
+  const container = paymentReminderContainer('https://cdn.example/server.png').toJSON();
+  assert.equal(container.type, 17);
+  assert.equal(container.accent_color, 0x3478c7);
+  assert.match(
+    container.components[0].content,
+    /^゛ \*\*Dolce Vita payment reminders:/,
   );
-  assert.deepEqual(embed.thumbnail, { url: 'https://cdn.example/server.png' });
+  assert.deepEqual(container.components[1], {
+    type: 12,
+    items: [{ media: { url: 'https://cdn.example/server.png' } }],
+  });
+  const buttonRow = container.components[2];
+  assert.equal(buttonRow.type, 1);
+  assert.deepEqual(
+    buttonRow.components.map(({ label, custom_id }) => [label, custom_id]),
+    [['pay', 'payment:yes'], ['no', 'payment:no']],
+  );
 });
 
-test('payment reminder embed supports servers without a custom icon', () => {
-  const embed = paymentReminderEmbed(null).toJSON();
-  assert.equal(embed.title, undefined);
-  assert.equal(embed.thumbnail, undefined);
+test('payment reminder V2 container supports servers without a custom icon', () => {
+  const container = paymentReminderContainer(null).toJSON();
+  assert.equal(container.type, 17);
+  assert.equal(container.components.length, 2);
+  assert.equal(container.components[1].type, 1);
+  assert.equal(
+    container.components[0].content,
+    '゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.',
+  );
 });
 
 test('vouch embed matches the order-details layout and Philippine time zone', () => {
@@ -597,22 +611,14 @@ test('voided order notice includes the requested text, buyer, item, and reason',
   assert.match(message, /No Vouch \/ Wrong Vouch = Warranty Voided/);
 });
 
-test('payment details embed includes GCash instructions and the attached payment image', () => {
+test('payment details embed includes GCash instructions and the attached payment thumbnail', () => {
   const embed = paymentDetailsEmbed().toJSON();
   assert.equal(embed.title, undefined);
   assert.equal(
     embed.description,
     '**🧁 payment method: gcash**\ngcash initials: H. C. S.\ngcash number: `09639298459`\npls send screenshot of the receipt, ty!',
   );
-  assert.deepEqual(embed.image, { url: 'attachment://gcash-payment.png' });
-});
-
-test('payment reminder has pay and no buttons in the requested order', () => {
-  const buttons = paymentReminderButtons().toJSON().components;
-  assert.deepEqual(buttons.map(({ custom_id, label }) => [label, custom_id]), [
-    ['pay', 'payment:yes'],
-    ['no', 'payment:no'],
-  ]);
+  assert.deepEqual(embed.thumbnail, { url: 'attachment://gcash-payment.png' });
 });
 
 test('calc shortcut sends the result before deleting the command message', async () => {

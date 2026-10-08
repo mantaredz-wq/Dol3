@@ -4,6 +4,8 @@ const {
   ButtonStyle,
   ContainerBuilder,
   EmbedBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
   MessageFlags,
   ModalBuilder,
   TextDisplayBuilder,
@@ -177,12 +179,18 @@ function giveawayContainer(giveaway, ended = false) {
     ));
 }
 
-function paymentReminderEmbed(serverIconUrl) {
-  const embed = new EmbedBuilder()
-    .setColor(0x3478c7)
-    .setDescription('゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.');
-  if (serverIconUrl) embed.setThumbnail(serverIconUrl);
-  return embed;
+function paymentReminderContainer(serverIconUrl) {
+  const container = new ContainerBuilder()
+    .setAccentColor(0x3478c7)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      '゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.',
+    ));
+  if (serverIconUrl) {
+    container.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(serverIconUrl)),
+    );
+  }
+  return container.addActionRowComponents(paymentReminderButtons());
 }
 
 function vouchEmbed(user, items, feedback, vouchedAt = new Date()) {
@@ -257,7 +265,7 @@ function paymentDetailsEmbed() {
   return new EmbedBuilder()
     .setColor(0x3478c7)
     .setDescription('**🧁 payment method: gcash**\ngcash initials: H. C. S.\ngcash number: `09639298459`\npls send screenshot of the receipt, ty!')
-    .setImage('attachment://gcash-payment.png');
+    .setThumbnail('attachment://gcash-payment.png');
 }
 
 function paymentReminderButtons() {
@@ -607,7 +615,7 @@ module.exports = {
   openShopContainer,
   closeShopContainer,
   giveawayContainer,
-  paymentReminderEmbed,
+  paymentReminderContainer,
   vouchEmbed,
   warrantyActivatedMessage,
   paymentDetailsEmbed,
