@@ -180,8 +180,6 @@ function robuxFormContainer() {
 function openShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
-      '',
       '@𓏲﹕     dolcezza',
       '_ _',
       ':candy:  **Dolce Vita is now __open__**',
@@ -206,8 +204,6 @@ function openShopContainer() {
 function closeShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
-      '',
       '_ _',
       ':candy:   **Dolce Vita is now closed**',
       '',
@@ -304,7 +300,7 @@ function vouchEmbed(user, items, feedback, vouchedAt = new Date()) {
     );
 }
 
-function warrantyActivatedMessage(user, items, vouchedAt = new Date()) {
+function warrantyActivatedContainer(user, items, vouchedAt = new Date()) {
   const date = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
@@ -315,27 +311,32 @@ function warrantyActivatedMessage(user, items, vouchedAt = new Date()) {
     timeZoneName: 'short',
   }).format(vouchedAt).replace('GMT+8', 'PHT (UTC+8)');
   const userId = user?.id ?? 'unknown';
-  return [
-    '<:blank:1557365898216611841>         <a:vitacheck:1557378165457027072>     **WARRANTY ACTIVATED *!***',
-    '_ _',
-    '        ⧽ applies only to (nitro, premium subs, svboosts)',
-    '                ⧽ you may ignore this if you purchased discord items',
-    '                        ⧽ present this if your item gets **revoked**',
-    '                        _ _',
-    '                        -# _ _     Deleting this message will automatically void the warranty',
-    '',
-    '                        ════════════════════════',
-    '<:blank:1557365898216611841>',
-    '<:blank:1557365898216611841> 🍩   **order details**',
-    '',
-    '୭ ˚. ᵎᵎ **buyer:**',
-    `         ⧽ <@${userId}>`,
-    '         ୭ ˚. ᵎᵎ  item:',
-    `                  ⧽ ${items}`,
-    '                  ୭ ˚. ᵎᵎ  date vouched:',
-    `                           ⧽ ${date}`,
-    '                           ୭ ˚. ᵎᵎ  proof:',
-  ].join('\n');
+  return new ContainerBuilder()
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      '<:blank:1557365898216611841> <a:vitacheck:1557378165457027072> **WARRANTY ACTIVATED *!***',
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      '› applies only to (nitro, premium subs, svboosts)',
+      '› you may ignore this if you purchased discord items',
+      '› present this if your item gets **revoked**',
+      '',
+      '-# Deleting this message will automatically void the warranty',
+    ].join('\n')))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent('━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      '<:blank:1557365898216611841> 🍩 **order details**',
+      '',
+      '🔹 **buyer:**',
+      `> <@${userId}>`,
+      '🔹 **item:**',
+      `> ${items}`,
+      '🔹 **date vouched:**',
+      `> ${date}`,
+      '🔹 **proof:**',
+    ].join('\n')))
+    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(
+      new MediaGalleryItemBuilder().setURL('attachment://vouch-proofs.png'),
+    ));
 }
 
 function orderCompletionReminderEmbed() {
@@ -439,13 +440,13 @@ function queueConfirmationMessage(order) {
   ].join('\n');
 }
 
-function dmsOrderMessage(item, link) {
+function dmsOrderMessage(orders) {
   return [
     '_ _',
     '## _ _  (  <:purplecandy:1557485716223828088>  )   Dolce Vita !',
     '_ _ ════════════════════════',
     '',
-    `_ _     (${item}) - (||${link}||)`,
+    ...orders.map(({ item, link }) => `_ _     (${item}) - (||${link}||)`),
     '',
     '_ _ ════════════════════════',
     '_ _  ',
@@ -707,7 +708,7 @@ module.exports = {
   giveawayContainer,
   paymentReminderContainer,
   vouchEmbed,
-  warrantyActivatedMessage,
+  warrantyActivatedContainer,
   paymentDetailsEmbed,
   paymentReminderButtons,
   orderTicketTermsContainer,

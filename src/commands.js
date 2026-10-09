@@ -179,6 +179,36 @@ module.exports = [
       .setName('link')
       .setDescription('Order link to include as a spoiler')
       .setRequired(true)
+      .setMaxLength(1024))
+    .addStringOption((option) => option
+      .setName('item2')
+      .setDescription('Second item name')
+      .setRequired(false)
+      .setMaxLength(200))
+    .addStringOption((option) => option
+      .setName('link2')
+      .setDescription('Second order link to include as a spoiler')
+      .setRequired(false)
+      .setMaxLength(1024))
+    .addStringOption((option) => option
+      .setName('item3')
+      .setDescription('Third item name')
+      .setRequired(false)
+      .setMaxLength(200))
+    .addStringOption((option) => option
+      .setName('link3')
+      .setDescription('Third order link to include as a spoiler')
+      .setRequired(false)
+      .setMaxLength(1024))
+    .addStringOption((option) => option
+      .setName('item4')
+      .setDescription('Fourth item name')
+      .setRequired(false)
+      .setMaxLength(200))
+    .addStringOption((option) => option
+      .setName('link4')
+      .setDescription('Fourth order link to include as a spoiler')
+      .setRequired(false)
       .setMaxLength(1024)),
   new SlashCommandBuilder()
     .setName('vouch')

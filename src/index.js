@@ -19,7 +19,7 @@ const {
   multiplicationContainer,
   paymentReminderContainer,
   vouchEmbed,
-  warrantyActivatedMessage,
+  warrantyActivatedContainer,
   vouchPreviewButtons,
   voidedOrderMessage,
   paymentDetailsEmbed,
@@ -346,7 +346,7 @@ async function handleVouchPreviewButton(interaction) {
       try {
         const owner = await client.users.fetch(preview.warrantyDmUserId);
         await sendV2(owner, {
-          content: warrantyActivatedMessage(owner, preview.items, preview.vouchedAt),
+          components: [warrantyActivatedContainer(owner, preview.items, preview.vouchedAt)],
           files: [{ attachment: preview.proofCollage, name: 'vouch-proofs.png' }],
           allowedMentions: { parse: [] },
         });
@@ -1330,20 +1330,40 @@ async function handleCommand(interaction) {
       return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
     }
     const user = interaction.options.getUser('user', true);
-    const item = interaction.options.getString('item', true).trim();
-    const link = interaction.options.getString('link', true).trim();
-    let parsedLink;
-    try {
-      parsedLink = new URL(link);
-    } catch {
-      return interaction.reply({ content: 'Enter a valid http or https order link.', ephemeral: true });
-    }
-    if (!item || !['http:', 'https:'].includes(parsedLink.protocol) || /[|\s]/.test(link)) {
-      return interaction.reply({ content: 'Enter a nonblank item and a valid http or https order link.', ephemeral: true });
+    const orders = [];
+    for (let index = 1; index <= 4; index += 1) {
+      const suffix = index === 1 ? '' : index;
+      const rawItem = interaction.options.getString(`item${suffix}`, index === 1);
+      const rawLink = interaction.options.getString(`link${suffix}`, index === 1);
+      if (rawItem === null && rawLink === null) continue;
+      if (rawItem === null || rawLink === null) {
+        return interaction.reply({
+          content: `Provide both item${suffix ? ` ${index}` : ''} and link${suffix ? ` ${index}` : ''}.`,
+          ephemeral: true,
+        });
+      }
+      const item = rawItem.trim();
+      const link = rawLink.trim();
+      let parsedLink;
+      try {
+        parsedLink = new URL(link);
+      } catch {
+        return interaction.reply({
+          content: `Enter a valid http or https link for item${suffix ? ` ${index}` : ''}.`,
+          ephemeral: true,
+        });
+      }
+      if (!item || !['http:', 'https:'].includes(parsedLink.protocol) || /[|\s]/.test(link)) {
+        return interaction.reply({
+          content: `Enter a nonblank item and a valid http or https link for item${suffix ? ` ${index}` : ''}.`,
+          ephemeral: true,
+        });
+      }
+      orders.push({ item, link });
     }
     await interaction.deferReply({ ephemeral: true });
     await sendV2(user, {
-      content: dmsOrderMessage(item, link),
+      content: dmsOrderMessage(orders),
       allowedMentions: { parse: [] },
     });
     return interaction.editReply({ content: `Order message sent to ${user}.` });

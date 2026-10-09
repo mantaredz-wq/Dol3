@@ -20,7 +20,7 @@ const {
   orderTicketTermsContainer,
   vouchLinkButton,
   orderCompletionReminderEmbed,
-  warrantyActivatedMessage,
+  warrantyActivatedContainer,
   dmsOrderMessage,
   vouchReminderContainer,
   vouchFormModal,
@@ -573,21 +573,33 @@ test('completed order reminder embed has no title and the warranty policy descri
   ].join('\n'));
 });
 
-test('buyer warranty DM after vouch includes the activated warranty and order details', () => {
-  const message = warrantyActivatedMessage(
+test('buyer warranty DM after vouch uses the card style and keeps its warranty details', () => {
+  const container = warrantyActivatedContainer(
     { id: '1329447441128230962', username: 'alice' },
     'Bobux',
     new Date('2026-10-04T22:53:00Z'),
-  );
+  ).toJSON();
+  const text = container.components
+    .filter((component) => component.type === 10)
+    .map((component) => component.content)
+    .join('\n');
 
-  assert.match(message, /WARRANTY ACTIVATED/i);
-  assert.match(message, /<a:vitacheck:1557378165457027072>/);
-  assert.match(message, /applies only to \(nitro, premium subs, svboosts\)/i);
-  assert.match(message, /<@1329447441128230962>/);
-  assert.match(message, /🍩   \*\*order details\*\*/);
-  assert.match(message, /⧽ Bobux/);
-  assert.match(message, /October 05, 2026 at 6:53 AM PHT \(UTC\+8\)/);
-  assert.match(message, /proof:/i);
+  assert.equal(container.type, 17);
+  assert.match(text, /WARRANTY ACTIVATED/i);
+  assert.match(text, /<a:vitacheck:1557378165457027072>/);
+  assert.match(text, /applies only to \(nitro, premium subs, svboosts\)/i);
+  assert.match(text, /you may ignore this if you purchased discord items/i);
+  assert.match(text, /present this if your item gets \*\*revoked\*\*/i);
+  assert.match(text, /Deleting this message will automatically void the warranty/);
+  assert.match(text, /<@1329447441128230962>/);
+  assert.match(text, /🍩 \*\*order details\*\*/);
+  assert.match(text, /> Bobux/);
+  assert.match(text, /October 05, 2026 at 6:53 AM PHT \(UTC\+8\)/);
+  assert.match(text, /proof:/i);
+  assert.ok(container.components.some((component) => (
+    component.type === 12
+    && component.items[0].media.url === 'attachment://vouch-proofs.png'
+  )));
 });
 
 test('completion DM puts the vouch shortcut button inside the reminder container', () => {
@@ -728,23 +740,49 @@ test('/queuelist is registered as a slash command', () => {
   assert.ok(commands.find((entry) => entry.name === 'queuelist'));
 });
 
-test('/dmsorder requires a user, item, and link', () => {
+test('/dmsorder requires a user and first item/link, with three optional item/link pairs', () => {
   const command = commands.find((entry) => entry.name === 'dmsorder');
   assert.ok(command);
-  assert.deepEqual(command.options.map(({ name, required }) => ({ name, required })), [
-    { name: 'user', required: true },
-    { name: 'item', required: true },
-    { name: 'link', required: true },
-  ]);
+  assert.deepEqual(
+    command.options.map(({ name, required }) => ({ name, required })),
+    [
+      { name: 'user', required: true },
+      { name: 'item', required: true },
+      { name: 'link', required: true },
+      { name: 'item2', required: false },
+      { name: 'link2', required: false },
+      { name: 'item3', required: false },
+      { name: 'link3', required: false },
+      { name: 'item4', required: false },
+      { name: 'link4', required: false },
+    ],
+  );
 });
 
 test('order DM message preserves the warranty text and spoiler-wraps the link', () => {
-  const message = dmsOrderMessage('PREMS', 'https://example.com/order/123');
+  const message = dmsOrderMessage([
+    { item: 'PREMS', link: 'https://example.com/order/123' },
+  ]);
   assert.match(message, /\(PREMS\) - \(\|\|https:\/\/example\.com\/order\/123\|\|\)/);
   assert.match(message, /no   vouch   =   no   warranty \/ regen/);
   assert.match(message, /link        invalid        =        no      regen/);
   assert.match(message, /12        hours         voids        warranty/);
   assert.match(message, /tysm for buying!/);
+});
+
+test('order DM message supports four item/link pairs in order', () => {
+  const message = dmsOrderMessage([
+    { item: 'PREMS', link: 'https://example.com/1' },
+    { item: 'BOBUX', link: 'https://example.com/2' },
+    { item: 'DEKOR', link: 'https://example.com/3' },
+    { item: 'SVBOWCH', link: 'https://example.com/4' },
+  ]);
+  const itemPositions = ['PREMS', 'BOBUX', 'DEKOR', 'SVBOWCH']
+    .map((item) => message.indexOf(`(${item})`));
+  assert.deepEqual([...itemPositions].sort((a, b) => a - b), itemPositions);
+  for (let index = 1; index <= 4; index += 1) {
+    assert.ok(message.includes(`(||https://example.com/${index}||)`));
+  }
 });
 
 test('removed per-ticket category slash commands are not registered', () => {
