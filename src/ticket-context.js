@@ -3,6 +3,13 @@ function ticketOwnerId(channel) {
   return channel.topic.match(/(?:^|;)ticket-owner:(\d+)(?:;|$)/)?.[1] ?? null;
 }
 
+function isOrderTicket(channel) {
+  return Boolean(
+    channel?.topic?.match(/(?:^|;)ticket-type:order(?:;|$)/)
+    && ticketOwnerId(channel),
+  );
+}
+
 function ticketTermsRequired(channel) {
   return Boolean(channel?.topic?.match(/(?:^|;)ticket-terms-required(?:;|$)/));
 }
@@ -49,6 +56,7 @@ async function ticketQuantity(channel) {
 
 module.exports = {
   ticketOwnerId,
+  isOrderTicket,
   ticketTermsRequired,
   ticketTermsAccepted,
   ticketCustomerId,

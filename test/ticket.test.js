@@ -29,6 +29,7 @@ const commands = require('../src/commands');
 const { ticketChannelName } = require('../src/ticket-names');
 const {
   ticketOwnerId,
+  isOrderTicket,
   ticketTermsRequired,
   ticketTermsAccepted,
   ticketCustomerId,
@@ -352,6 +353,9 @@ test('ticket owner lookup only recognizes active ticket topics', () => {
   assert.equal(ticketOwnerId({ topic: 'ticket-owner:123456789012345678' }), null);
   assert.equal(ticketOwnerId({ topic: 'ticket-owner:123456789012345678;ticket-type:unknown' }), null);
   assert.equal(ticketOwnerId(null), null);
+  assert.equal(isOrderTicket({ topic: 'ticket-owner:123456789012345678;ticket-type:order' }), true);
+  assert.equal(isOrderTicket({ topic: 'ticket-owner:123456789012345678;ticket-type:report' }), false);
+  assert.equal(isOrderTicket({ topic: 'ticket-type:order' }), false);
 });
 
 test('orders in tickets use the ticket owner as the customer', () => {

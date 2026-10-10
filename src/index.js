@@ -51,6 +51,7 @@ const { ticketTranscriptText, ticketTranscriptAttachment } = require('./ticket-t
 const { ticketChannelName } = require('./ticket-names');
 const {
   ticketOwnerId,
+  isOrderTicket,
   ticketTermsRequired,
   ticketTermsAccepted,
   ticketCustomerId,
@@ -1174,9 +1175,9 @@ async function handleCommand(interaction) {
 
   if (interaction.commandName === 'queue') {
     const ownerId = ticketOwnerId(interaction.channel);
-    if (!ownerId) {
+    if (!ownerId || !isOrderTicket(interaction.channel)) {
       return interaction.reply({
-        content: 'Run `/queue` inside the active order ticket so I can use that ticket owner’s order.',
+        content: 'Run `/queue` inside an active order ticket so I can use that ticket owner’s order.',
         ephemeral: true,
       });
     }
@@ -1196,6 +1197,12 @@ async function handleCommand(interaction) {
   }
 
   if (interaction.commandName === 'queuelist') {
+    if (!ticketOwnerId(interaction.channel)) {
+      return interaction.reply({
+        content: 'Run `/queuelist` inside an active ticket to view the order queue.',
+        ephemeral: true,
+      });
+    }
     return interaction.reply({
       embeds: [queueEmbed(store.listActive(interaction.guildId))],
       allowedMentions: { parse: [] },
