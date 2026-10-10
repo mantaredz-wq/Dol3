@@ -170,11 +170,13 @@ test('queue confirmation includes the buyer, order details, and /order author', 
     preparedById: 'staff-1',
   });
 
+  assert.match(message, /^_ _\n\*\*\( <:purplecandy:\d+> \)  from dolce vita !\*\*/);
   assert.match(message, /yoυr order ιs noted, <@buyer-1>/);
+  assert.match(message, /━━━━━━━━━━  order detαιls  ━━━━━━━━━━/);
   assert.match(message, /\( 2 \) — DEKOR/);
   assert.match(message, /pαιd vια GCash/);
-  assert.match(message, /prepαred  by  <@staff-1>/);
-  assert.match(message, /no   cαncellαtιon   \/   rush   orders/);
+  assert.match(message, /•  prepαred by <@staff-1>/);
+  assert.match(message, /no cαncellαtιon \/ rush orders/);
   assert.doesNotMatch(message, /(?:^|\n)##(?:\n|$)/);
 });
 

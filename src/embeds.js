@@ -432,14 +432,15 @@ function queueConfirmationMessage(order) {
   const preparedBy = order.preparedById ? `<@${order.preparedById}>` : 'Not recorded';
   return [
     '_ _',
-    '<:blank:1557365898216611841> ( <:purplecandy:1557485716223828088>    )   from dolce vita !',
-    `<:blank:1557365898216611841>         yoυr order ιs noted, <@${order.customerId}> . . .`,
-    '<:blank:1557365898216611841>   ═══  order detαιls :  ═══',
-    `<:blank:1557365898216611841> <:blank:1557365898216611841> ⧽  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`,
-    `<:blank:1557365898216611841> <:blank:1557365898216611841> ⧽  pαιd vια ${order.paymentMethod ?? 'Not specified'}`,
-    '<:blank:1557365898216611841>   ═════════',
-    `<:blank:1557365898216611841>   ⧽  prepαred  by  ${preparedBy} . . .`,
-    '-#     no   cαncellαtιon   /   rush   orders',
+    `**( <:purplecandy:1557485716223828088> )  from dolce vita !**`,
+    `yoυr order ιs noted, <@${order.customerId}> . . .`,
+    '',
+    '━━━━━━━━━━  order detαιls  ━━━━━━━━━━',
+    `•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`,
+    `•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `•  prepαred by ${preparedBy} . . .`,
+    '-# no cαncellαtιon / rush orders',
     '_ _',
   ].join('\n');
 }

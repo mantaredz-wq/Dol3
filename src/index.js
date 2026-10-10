@@ -1189,7 +1189,9 @@ async function handleCommand(interaction) {
     }
     return interaction.reply({
       content: queueConfirmationMessage(order),
-      allowedMentions: { users: [order.customerId, order.preparedById].filter(Boolean) },
+      allowedMentions: {
+        users: [...new Set([order.customerId, order.preparedById].filter(Boolean))],
+      },
     });
   }
 
