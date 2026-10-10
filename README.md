@@ -34,7 +34,7 @@ Set the Railway service root directory to the repository root and clear any cust
 - `/openshop` posts the shop-open announcement as a Discord Components V2 container in the current channel and mentions the shop announcement role.
 - `/closeshop` posts the shop-closed announcement as a Discord Components V2 container in the current channel, with red “closed” text and blue bold section headings, and mentions the shop announcement role.
 - `/dmsuser user:@user reply:<message>` lets authorized staff DM a user in a Discord Components V2 container. Mentions in the reply do not trigger notifications.
-- `/dmsorder user:@user` opens a form with up to five paired item/link fields. Enter each as `item name | https://order-link`; authorized staff can then send the buyer the formatted Dolce Vita order and warranty message. Links are spoiler-censored in the DM.
+- `/dmsorder user:@user` opens a form with separate item and link fields. Add up to five pairs over a short, multi-step form, then send the buyer the formatted Dolce Vita order and warranty message. Links are spoiler-censored in the DM.
 - `/set vouch channel:#vouches` lets an administrator choose where vouches are posted.
 - `/set voided_role role:<role>` configures the role assigned to the order customer when an order is completed. A vouch submitted within 12 hours removes the role and posts a notice in the order ticket.
 - `/voidedchannel channel:#channel` configures where the warranty-void notice is sent after 12 hours without a vouch.

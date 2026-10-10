@@ -107,7 +107,7 @@ test('open-shop container has an Order Here link button inside the container', (
   const container = openShopContainer().toJSON();
   assert.equal(container.type, 17);
   assert.match(container.components[0].content, /<@&1555603985694588940>/);
-  assert.match(container.components[0].content, /𓏲﹕     dolcezza/);
+  assert.doesNotMatch(container.components[0].content, /𓏲﹕\s*dolcezza/);
   assert.match(container.components[0].content, /Dolce Vita is now __open__/);
   const buttonRow = container.components[1];
   assert.equal(buttonRow.type, 1);

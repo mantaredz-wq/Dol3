@@ -183,7 +183,6 @@ function openShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
       `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
-      '𓏲﹕     dolcezza',
       '_ _',
       ':candy:  **Dolce Vita is now __open__**',
       '',
@@ -691,22 +690,47 @@ function ticketCloseReasonModal(confirmationId) {
     );
 }
 
-function dmsOrderFormModal(userId) {
+function dmsOrderFormModal(formId, startItemNumber = 1) {
+  const pairCount = Math.min(2, 6 - startItemNumber);
+  const itemNumbers = Array.from({ length: pairCount }, (_, index) => startItemNumber + index);
   return new ModalBuilder()
-    .setCustomId(`dmsorder:form:${userId}`)
+    .setCustomId(`dmsorder:form:${formId}:${startItemNumber}`)
     .setTitle('DOLCE VITA ORDER DM')
-    .addLabelComponents(...Array.from({ length: 5 }, (_, index) => (
+    .addLabelComponents(...itemNumbers.flatMap((itemNumber, index) => [
       new LabelBuilder({
-        label: `ITEM + LINK ${index + 1}`,
-        description: 'Enter item name | order URL',
+        label: `ITEM ${itemNumber}`,
         component: new TextInputBuilder()
-          .setCustomId(`order${index + 1}`)
-          .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('Item name | https://example.com/order')
-          .setMaxLength(1230)
+          .setCustomId(`item${itemNumber}`)
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('Enter item name')
+          .setMaxLength(200)
           .setRequired(index === 0),
-      })
-    )));
+      }),
+      new LabelBuilder({
+        label: `LINK ${itemNumber}`,
+        component: new TextInputBuilder()
+          .setCustomId(`link${itemNumber}`)
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('https://example.com/order')
+          .setMaxLength(1024)
+          .setRequired(index === 0),
+      }),
+    ]));
+}
+
+function dmsOrderFormButtons(formId, nextItemNumber) {
+  const buttons = [];
+  if (nextItemNumber <= 5) {
+    buttons.push(new ButtonBuilder()
+      .setCustomId(`dmsorder:next:${formId}:${nextItemNumber}`)
+      .setLabel(`Add item${nextItemNumber === 3 ? 's 3–4' : ' 5'}`)
+      .setStyle(ButtonStyle.Primary));
+  }
+  buttons.push(new ButtonBuilder()
+    .setCustomId(`dmsorder:send:${formId}`)
+    .setLabel('Send order DM')
+    .setStyle(ButtonStyle.Success));
+  return new ActionRowBuilder().addComponents(...buttons);
 }
 
 function ticketTranscriptEmbed({
@@ -760,6 +784,7 @@ module.exports = {
   SHOP_ANNOUNCEMENT_ROLE_ID,
   dmsOrderMessage,
   dmsOrderFormModal,
+  dmsOrderFormButtons,
   reportTicketModal,
   ticketButtons,
   ticketCloseConfirmationEmbed,

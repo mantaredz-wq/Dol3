@@ -23,6 +23,7 @@ const {
   warrantyActivatedContainer,
   dmsOrderMessage,
   dmsOrderFormModal,
+  dmsOrderFormButtons,
   vouchReminderContainer,
   vouchFormModal,
 } = require('../src/embeds');
@@ -757,43 +758,58 @@ test('/queuelist is registered as a slash command', () => {
   assert.ok(commands.find((entry) => entry.name === 'queuelist'));
 });
 
-test('/dmsorder selects a buyer before opening its paired item/link form', () => {
+test('/dmsorder opens separate item and link fields in up to three modal steps', () => {
   const command = commands.find((entry) => entry.name === 'dmsorder');
   assert.ok(command);
   assert.deepEqual(command.options.map(({ name, required }) => ({ name, required })), [
     { name: 'user', required: true },
   ]);
 
-  const modal = dmsOrderFormModal('buyer-123').toJSON();
-  assert.equal(modal.custom_id, 'dmsorder:form:buyer-123');
+  const modal = dmsOrderFormModal('form-123').toJSON();
+  assert.equal(modal.custom_id, 'dmsorder:form:form-123:1');
   assert.equal(modal.title, 'DOLCE VITA ORDER DM');
   assert.deepEqual(modal.components.map(({ label, component }) => ({
     label,
     customId: component.custom_id,
     required: component.required,
-  })), Array.from({ length: 5 }, (_, index) => ({
-    label: `ITEM + LINK ${index + 1}`,
-    customId: `order${index + 1}`,
-    required: index === 0,
-  })));
+  })), [
+    { label: 'ITEM 1', customId: 'item1', required: true },
+    { label: 'LINK 1', customId: 'link1', required: true },
+    { label: 'ITEM 2', customId: 'item2', required: false },
+    { label: 'LINK 2', customId: 'link2', required: false },
+  ]);
+  assert.deepEqual(dmsOrderFormModal('form-123', 5).toJSON().components.map(({ label, component }) => ({
+    label,
+    customId: component.custom_id,
+    required: component.required,
+  })), [
+    { label: 'ITEM 5', customId: 'item5', required: true },
+    { label: 'LINK 5', customId: 'link5', required: true },
+  ]);
+  const buttons = dmsOrderFormButtons('form-123', 3).toJSON().components;
+  assert.deepEqual(buttons.map(({ custom_id, label }) => [custom_id, label]), [
+    ['dmsorder:next:form-123:3', 'Add items 3–4'],
+    ['dmsorder:send:form-123', 'Send order DM'],
+  ]);
 });
 
 test('order DM form parses item/link pairs and validates optional entries', () => {
   assert.deepEqual(parseDmsOrderForm([
-    'PREMS | https://example.com/1',
-    'BOBUX | https://example.com/2',
-    '',
-    'DEKOR | http://example.com/4',
+    { item: 'PREMS', link: 'https://example.com/1' },
+    { item: 'BOBUX', link: 'https://example.com/2' },
   ]), {
     value: [
       { item: 'PREMS', link: 'https://example.com/1' },
       { item: 'BOBUX', link: 'https://example.com/2' },
-      { item: 'DEKOR', link: 'http://example.com/4' },
     ],
   });
-  assert.match(parseDmsOrderForm(['PREMS']).error, /separated by \|/);
-  assert.match(parseDmsOrderForm(['PREMS | javascript:alert(1)']).error, /valid http or https/);
-  assert.match(parseDmsOrderForm(['']).error, /first item and its order link/);
+  assert.deepEqual(parseDmsOrderForm([
+    { item: 'DEKOR', link: 'http://example.com/3' },
+    { item: '', link: '' },
+  ], 3), { value: [{ item: 'DEKOR', link: 'http://example.com/3' }] });
+  assert.match(parseDmsOrderForm([{ item: 'PREMS', link: '' }]).error, /both item 1 and its order link/);
+  assert.match(parseDmsOrderForm([{ item: 'PREMS', link: 'javascript:alert(1)' }]).error, /valid http or https/);
+  assert.match(parseDmsOrderForm([{ item: '', link: '' }]).error, /item 1 and its order link/);
 });
 
 test('order DM message preserves the warranty text and spoiler-wraps the link', () => {

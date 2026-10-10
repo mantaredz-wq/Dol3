@@ -38,6 +38,7 @@ const {
   SHOP_ANNOUNCEMENT_ROLE_ID,
   dmsOrderMessage,
   dmsOrderFormModal,
+  dmsOrderFormButtons,
   reportTicketModal,
   ticketButtons,
   ticketCloseConfirmationEmbed,
@@ -106,6 +107,8 @@ const pendingVouchesByTicket = new Map();
 const TICKET_CLOSE_CONFIRMATION_DURATION_MS = 5 * 60 * 1000;
 const pendingVouchPreviews = new Map();
 const VOUCH_PREVIEW_DURATION_MS = 15 * 60 * 1000;
+const pendingDmsOrderForms = new Map();
+const DMS_ORDER_FORM_DURATION_MS = 15 * 60 * 1000;
 
 function discardVouchPreview(previewId) {
   const preview = pendingVouchPreviews.get(previewId);
@@ -286,20 +289,81 @@ async function handleDmsOrderFormSubmit(interaction) {
   if (!isStaff(interaction)) {
     return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
   }
-  const [, , userId] = interaction.customId.split(':');
-  const parsed = parseDmsOrderForm(Array.from({ length: 5 }, (_, index) => (
-    interaction.fields.fields.get(`order${index + 1}`)?.value ?? ''
-  )));
+  const [, , formId, startItemText] = interaction.customId.split(':');
+  const form = pendingDmsOrderForms.get(formId);
+  const startItemNumber = Number(startItemText);
+  if (!form || form.expiresAt <= Date.now()) {
+    pendingDmsOrderForms.delete(formId);
+    return interaction.reply({ content: 'This order form expired. Run `/dmsorder` again to start a new one.', ephemeral: true });
+  }
+  if (form.staffId !== interaction.user.id) {
+    return interaction.reply({ content: 'Only the staff member who started this order form can submit it.', ephemeral: true });
+  }
+  if (form.nextItemNumber !== startItemNumber) {
+    return interaction.reply({ content: 'This order form step is no longer active. Use the latest form to continue.', ephemeral: true });
+  }
+  if (![1, 3, 5].includes(startItemNumber)) {
+    return interaction.reply({ content: 'This order form step is not valid. Run `/dmsorder` again to start a new one.', ephemeral: true });
+  }
+  const pairCount = Math.min(2, 6 - startItemNumber);
+  const parsed = parseDmsOrderForm(Array.from({ length: pairCount }, (_, index) => {
+    const itemNumber = startItemNumber + index;
+    return {
+      item: interaction.fields.fields.get(`item${itemNumber}`)?.value ?? '',
+      link: interaction.fields.fields.get(`link${itemNumber}`)?.value ?? '',
+    };
+  }), startItemNumber);
   if (parsed.error) {
     return interaction.reply({ content: parsed.error, ephemeral: true });
   }
-  await interaction.deferReply({ ephemeral: true });
-  const user = await client.users.fetch(userId);
-  await sendV2(user, {
-    content: dmsOrderMessage(parsed.value),
-    allowedMentions: { parse: [] },
+  form.orders.push(...parsed.value);
+  form.nextItemNumber = startItemNumber + pairCount;
+  form.expiresAt = Date.now() + DMS_ORDER_FORM_DURATION_MS;
+  return interaction.reply({
+    content: `Added ${parsed.value.length === 1 ? '1 item' : `${parsed.value.length} items`}. Add more items or send the order DM.`,
+    components: [dmsOrderFormButtons(formId, form.nextItemNumber)],
+    ephemeral: true,
   });
-  return interaction.editReply({ content: `Order message sent to ${user}.` });
+}
+
+async function handleDmsOrderFormButton(interaction) {
+  const [, action, formId, nextItemText] = interaction.customId.split(':');
+  const form = pendingDmsOrderForms.get(formId);
+  if (!form || form.expiresAt <= Date.now()) {
+    pendingDmsOrderForms.delete(formId);
+    return interaction.reply({ content: 'This order form expired. Run `/dmsorder` again to start a new one.', ephemeral: true });
+  }
+  if (!isStaff(interaction) || form.staffId !== interaction.user.id) {
+    return interaction.reply({ content: 'Only the staff member who started this order form can continue it.', ephemeral: true });
+  }
+  form.expiresAt = Date.now() + DMS_ORDER_FORM_DURATION_MS;
+  if (action === 'next') {
+    const nextItemNumber = Number(nextItemText);
+    if (form.nextItemNumber !== nextItemNumber || nextItemNumber > 5) {
+      return interaction.reply({ content: 'This order form step is no longer active. Use the latest form to continue.', ephemeral: true });
+    }
+    return interaction.showModal(dmsOrderFormModal(formId, nextItemNumber));
+  }
+  if (action !== 'send') {
+    return interaction.reply({ content: 'This order form action is not valid.', ephemeral: true });
+  }
+  if (form.sending) {
+    return interaction.reply({ content: 'This order DM is already being sent.', ephemeral: true });
+  }
+  form.sending = true;
+  await interaction.deferReply({ ephemeral: true });
+  try {
+    const user = await client.users.fetch(form.buyerId);
+    await sendV2(user, {
+      content: dmsOrderMessage(form.orders),
+      allowedMentions: { parse: [] },
+    });
+    pendingDmsOrderForms.delete(formId);
+    return interaction.editReply({ content: `Order message sent to ${user}.` });
+  } catch (error) {
+    form.sending = false;
+    throw error;
+  }
 }
 
 async function handleVouchPreviewButton(interaction) {
@@ -1421,7 +1485,19 @@ async function handleCommand(interaction) {
       return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
     }
     const user = interaction.options.getUser('user', true);
-    return interaction.showModal(dmsOrderFormModal(user.id));
+    for (const [formId, form] of pendingDmsOrderForms) {
+      if (form.expiresAt <= Date.now()) pendingDmsOrderForms.delete(formId);
+    }
+    const formId = randomUUID();
+    pendingDmsOrderForms.set(formId, {
+      staffId: interaction.user.id,
+      buyerId: user.id,
+      orders: [],
+      nextItemNumber: 1,
+      expiresAt: Date.now() + DMS_ORDER_FORM_DURATION_MS,
+      sending: false,
+    });
+    return interaction.showModal(dmsOrderFormModal(formId));
   }
 
   if (['robuxform', 'openshop', 'closeshop'].includes(interaction.commandName)) {
@@ -1892,6 +1968,7 @@ client.on('interactionCreate', async (interaction) => {
       }
     }
     else if (interaction.isButton() && interaction.customId.startsWith('vouch-preview:')) await handleVouchPreviewButton(interaction);
+    else if (interaction.isButton() && interaction.customId.startsWith('dmsorder:')) await handleDmsOrderFormButton(interaction);
     else if (interaction.isButton() && interaction.customId.startsWith('giveaway:')) await handleGiveawayButton(interaction);
     else if (interaction.isButton() && interaction.customId.startsWith('ticket-close:')) await handleTicketCloseConfirmation(interaction);
     else if (interaction.isButton() && interaction.customId.startsWith('ticket:')) await handleTicketButton(interaction);
