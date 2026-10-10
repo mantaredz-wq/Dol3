@@ -10,6 +10,15 @@ function isOrderTicket(channel) {
   );
 }
 
+function ticketChannelTopic(ownerId, type, orderForm) {
+  return [
+    `ticket-owner:${ownerId}`,
+    `ticket-type:${type}`,
+    ...(type === 'order' ? ['ticket-terms-required'] : []),
+    ...(orderForm ? [`ticket-product:${orderForm.product}`, `ticket-quantity:${orderForm.quantity}`] : []),
+  ].join(';');
+}
+
 function ticketTermsRequired(channel) {
   return Boolean(channel?.topic?.match(/(?:^|;)ticket-terms-required(?:;|$)/));
 }
@@ -57,6 +66,7 @@ async function ticketQuantity(channel) {
 module.exports = {
   ticketOwnerId,
   isOrderTicket,
+  ticketChannelTopic,
   ticketTermsRequired,
   ticketTermsAccepted,
   ticketCustomerId,

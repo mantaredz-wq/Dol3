@@ -182,7 +182,8 @@ function robuxFormContainer() {
 function openShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}> 𓏲﹕     dolcezza`,
+      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
+      '𓏲﹕     dolcezza',
       '_ _',
       ':candy:  **Dolce Vita is now __open__**',
       '',
@@ -207,7 +208,7 @@ function closeShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
       `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
-      '_ _',
+      '',
       ':candy:   **Dolce Vita is now closed**',
       '',
       'Thank you to everyone who supported Dolce Vita,',
@@ -217,9 +218,11 @@ function closeShopContainer() {
       '',
       'if you create a ticket while closed please wait for',
       'Dolce Vita Staff to open the shop and assist you.',
-      '═════════════════════',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
       '⟢ please keep an eye on our [Announcement](https://discord.com/channels/1555578509743755306/1555826478522835014) channel for updates on our next opening.',
-      '═════════════════════',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
       '**what happened?**',
       "> we're busy/sleeping or at school/work, and improving our services",
       "> to serve y'all better",
@@ -414,18 +417,28 @@ function orderButtons(order) {
 function queueEmbed(orders) {
   const embed = new EmbedBuilder()
     .setColor(0x3478c7)
-    .setTitle('Public Order Queue')
+    .setTitle('Dolce Vita Order Queue')
     .setDescription(orders.length ? `${orders.length} active order${orders.length === 1 ? '' : 's'}` : 'There are no active orders.');
 
   for (const order of orders.slice(0, 25)) {
     embed.addFields({
-      name: `#${orderReference(order)} - ${LABELS[order.status]}`,
-      value: `**${order.items ?? order.item}** - quantity: ${order.quantity ?? 1} - prepared by: ${order.preparedById ? `<@${order.preparedById}>` : 'Not recorded'}\nBuyer: <@${order.customerId}>`,
+      name: `#${orderReference(order)} - ${LABELS[order.status]} (Ticket came from ${order.sourceChannelId ? `<#${order.sourceChannelId}>` : 'Not recorded'})`,
+      value: `(${order.items ?? order.item}) - (quantity): ${order.quantity ?? 1}\nprepared by: ${order.preparedById ? `<@${order.preparedById}>` : 'Not recorded'}\nBuyer: <@${order.customerId}>`,
       inline: false,
     });
   }
   if (orders.length > 25) embed.setFooter({ text: 'Showing the first 25 active orders.' });
   return embed;
+}
+
+function centeredQueueLine(line) {
+  if (!line || line === '_ _') return line;
+  const visibleText = line
+    .replace(/<:[^:]+:\d+>/g, 'x')
+    .replace(/<@!?&?\d+>/g, '@username')
+    .replace(/[*_`]/g, '');
+  const padding = Math.max(0, Math.floor((48 - Array.from(visibleText).length) / 2));
+  return `${'\u2002'.repeat(padding)}${line}`;
 }
 
 function queueConfirmationMessage(order) {
@@ -442,7 +455,7 @@ function queueConfirmationMessage(order) {
     `•  prepαred by ${preparedBy} . . .`,
     '-# no cαncellαtιon / rush orders',
     '_ _',
-  ].join('\n');
+  ].map(centeredQueueLine).join('\n');
 }
 
 function dmsOrderMessage(orders) {
@@ -678,6 +691,24 @@ function ticketCloseReasonModal(confirmationId) {
     );
 }
 
+function dmsOrderFormModal(userId) {
+  return new ModalBuilder()
+    .setCustomId(`dmsorder:form:${userId}`)
+    .setTitle('DOLCE VITA ORDER DM')
+    .addLabelComponents(...Array.from({ length: 5 }, (_, index) => (
+      new LabelBuilder({
+        label: `ITEM + LINK ${index + 1}`,
+        description: 'Enter item name | order URL',
+        component: new TextInputBuilder()
+          .setCustomId(`order${index + 1}`)
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder('Item name | https://example.com/order')
+          .setMaxLength(1230)
+          .setRequired(index === 0),
+      })
+    )));
+}
+
 function ticketTranscriptEmbed({
   channelId,
   createdAt,
@@ -728,6 +759,7 @@ module.exports = {
   queueConfirmationMessage,
   SHOP_ANNOUNCEMENT_ROLE_ID,
   dmsOrderMessage,
+  dmsOrderFormModal,
   reportTicketModal,
   ticketButtons,
   ticketCloseConfirmationEmbed,

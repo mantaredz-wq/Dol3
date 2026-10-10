@@ -22,6 +22,7 @@ const {
   orderCompletionReminderEmbed,
   warrantyActivatedContainer,
   dmsOrderMessage,
+  dmsOrderFormModal,
   vouchReminderContainer,
   vouchFormModal,
 } = require('../src/embeds');
@@ -30,6 +31,7 @@ const { ticketChannelName } = require('../src/ticket-names');
 const {
   ticketOwnerId,
   isOrderTicket,
+  ticketChannelTopic,
   ticketTermsRequired,
   ticketTermsAccepted,
   ticketCustomerId,
@@ -47,6 +49,7 @@ const {
 const { voidedOrderMessage } = require('../src/embeds');
 const { parseOrderTicketForm } = require('../src/order-ticket-form');
 const { parseOthersTicketForm } = require('../src/others-ticket-form');
+const { parseDmsOrderForm } = require('../src/dms-order-form');
 const { multiplyAmounts, multiplyExpression } = require('../src/multiplication');
 const { sendThenDeleteCommand } = require('../src/message-command-actions');
 const { setVoidedRole } = require('../src/voided-role');
@@ -356,6 +359,13 @@ test('ticket owner lookup only recognizes active ticket topics', () => {
   assert.equal(isOrderTicket({ topic: 'ticket-owner:123456789012345678;ticket-type:order' }), true);
   assert.equal(isOrderTicket({ topic: 'ticket-owner:123456789012345678;ticket-type:report' }), false);
   assert.equal(isOrderTicket({ topic: 'ticket-type:order' }), false);
+});
+
+test('order ticket topic includes owner, type, terms, product, and quantity', () => {
+  assert.equal(
+    ticketChannelTopic('123456789012345678', 'order', { product: 'DEKOR', quantity: '3' }),
+    'ticket-owner:123456789012345678;ticket-type:order;ticket-terms-required;ticket-product:DEKOR;ticket-quantity:3',
+  );
 });
 
 test('orders in tickets use the ticket owner as the customer', () => {
@@ -747,25 +757,43 @@ test('/queuelist is registered as a slash command', () => {
   assert.ok(commands.find((entry) => entry.name === 'queuelist'));
 });
 
-test('/dmsorder requires a user and first item/link, with four optional item/link pairs', () => {
+test('/dmsorder selects a buyer before opening its paired item/link form', () => {
   const command = commands.find((entry) => entry.name === 'dmsorder');
   assert.ok(command);
-  assert.deepEqual(
-    command.options.map(({ name, required }) => ({ name, required })),
-    [
-      { name: 'user', required: true },
-      { name: 'item', required: true },
-      { name: 'link', required: true },
-      { name: 'item2', required: false },
-      { name: 'link2', required: false },
-      { name: 'item3', required: false },
-      { name: 'link3', required: false },
-      { name: 'item4', required: false },
-      { name: 'link4', required: false },
-      { name: 'item5', required: false },
-      { name: 'link5', required: false },
+  assert.deepEqual(command.options.map(({ name, required }) => ({ name, required })), [
+    { name: 'user', required: true },
+  ]);
+
+  const modal = dmsOrderFormModal('buyer-123').toJSON();
+  assert.equal(modal.custom_id, 'dmsorder:form:buyer-123');
+  assert.equal(modal.title, 'DOLCE VITA ORDER DM');
+  assert.deepEqual(modal.components.map(({ label, component }) => ({
+    label,
+    customId: component.custom_id,
+    required: component.required,
+  })), Array.from({ length: 5 }, (_, index) => ({
+    label: `ITEM + LINK ${index + 1}`,
+    customId: `order${index + 1}`,
+    required: index === 0,
+  })));
+});
+
+test('order DM form parses item/link pairs and validates optional entries', () => {
+  assert.deepEqual(parseDmsOrderForm([
+    'PREMS | https://example.com/1',
+    'BOBUX | https://example.com/2',
+    '',
+    'DEKOR | http://example.com/4',
+  ]), {
+    value: [
+      { item: 'PREMS', link: 'https://example.com/1' },
+      { item: 'BOBUX', link: 'https://example.com/2' },
+      { item: 'DEKOR', link: 'http://example.com/4' },
     ],
-  );
+  });
+  assert.match(parseDmsOrderForm(['PREMS']).error, /separated by \|/);
+  assert.match(parseDmsOrderForm(['PREMS | javascript:alert(1)']).error, /valid http or https/);
+  assert.match(parseDmsOrderForm(['']).error, /first item and its order link/);
 });
 
 test('order DM message preserves the warranty text and spoiler-wraps the link', () => {

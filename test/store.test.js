@@ -170,27 +170,35 @@ test('queue confirmation includes the buyer, order details, and /order author', 
     preparedById: 'staff-1',
   });
 
-  assert.match(message, /^_ _\n\*\*\( <:purplecandy:\d+> \)  from dolce vita !\*\*/);
+  assert.match(message, /^_ _\n\u2002+\*\*\( <:purplecandy:\d+> \)  from dolce vita !\*\*/);
   assert.match(message, /yoυr order ιs noted, <@buyer-1>/);
   assert.match(message, /━━━━━━━━━━  order detαιls  ━━━━━━━━━━/);
   assert.match(message, /\( 2 \) — DEKOR/);
   assert.match(message, /pαιd vια GCash/);
   assert.match(message, /•  prepαred by <@staff-1>/);
   assert.match(message, /no cαncellαtιon \/ rush orders/);
+  assert.match(message, /\n\u2002+━━━━━━━━━━  order detαιls/);
+  assert.match(message, /\n\u2002+•  prepαred by/);
   assert.doesNotMatch(message, /(?:^|\n)##(?:\n|$)/);
 });
 
-test('queue list includes quantity and the /order author', () => {
+test('queue list shows its title, count, ticket source, quantity, /order author, and buyer', () => {
   const embed = queueEmbed([{
     id: 'ORDER-1',
     status: 'pending',
-    items: 'PREMS',
+    ticketProduct: 'DEKOR',
+    items: 'DEKOR',
     quantity: 3,
     customerId: 'buyer-1',
     preparedById: 'staff-1',
+    sourceChannelId: 'ticket-1',
   }]).toJSON();
 
-  assert.match(embed.fields[0].value, /\*\*PREMS\*\* - quantity: 3 - prepared by: <@staff-1>/);
+  assert.equal(embed.title, 'Dolce Vita Order Queue');
+  assert.equal(embed.description, '1 active order');
+  assert.match(embed.fields[0].name, /^#DEKOR - Waiting \(Ticket came from <#ticket-1>\)$/);
+  assert.match(embed.fields[0].value, /^\(DEKOR\) - \(quantity\): 3/);
+  assert.match(embed.fields[0].value, /prepared by: <@staff-1>/);
   assert.match(embed.fields[0].value, /Buyer: <@buyer-1>/);
 });
 

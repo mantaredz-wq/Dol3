@@ -37,6 +37,7 @@ const {
   queueConfirmationMessage,
   SHOP_ANNOUNCEMENT_ROLE_ID,
   dmsOrderMessage,
+  dmsOrderFormModal,
   reportTicketModal,
   ticketButtons,
   ticketCloseConfirmationEmbed,
@@ -52,6 +53,7 @@ const { ticketChannelName } = require('./ticket-names');
 const {
   ticketOwnerId,
   isOrderTicket,
+  ticketChannelTopic,
   ticketTermsRequired,
   ticketTermsAccepted,
   ticketCustomerId,
@@ -73,6 +75,7 @@ const { parseTicketMessageCommand } = require('./ticket-message-commands');
 const { parseOrderTicketForm } = require('./order-ticket-form');
 const { parseOrderVouchForm } = require('./order-vouch-form');
 const { parseOthersTicketForm } = require('./others-ticket-form');
+const { parseDmsOrderForm } = require('./dms-order-form');
 const { multiplyAmounts, multiplyExpression } = require('./multiplication');
 const { replyThenDeleteCommand } = require('./message-command-actions');
 const {
@@ -277,6 +280,26 @@ async function handleVouchFormSubmit(interaction) {
     proofs,
     ticketChannel: ticket.channel,
   });
+}
+
+async function handleDmsOrderFormSubmit(interaction) {
+  if (!isStaff(interaction)) {
+    return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
+  }
+  const [, , userId] = interaction.customId.split(':');
+  const parsed = parseDmsOrderForm(Array.from({ length: 5 }, (_, index) => (
+    interaction.fields.fields.get(`order${index + 1}`)?.value ?? ''
+  )));
+  if (parsed.error) {
+    return interaction.reply({ content: parsed.error, ephemeral: true });
+  }
+  await interaction.deferReply({ ephemeral: true });
+  const user = await client.users.fetch(userId);
+  await sendV2(user, {
+    content: dmsOrderMessage(parsed.value),
+    allowedMentions: { parse: [] },
+  });
+  return interaction.editReply({ content: `Order message sent to ${user}.` });
 }
 
 async function handleVouchPreviewButton(interaction) {
@@ -963,10 +986,13 @@ async function createTicketChannel(interaction, type, orderForm, reportForm, oth
       ),
       type: ChannelType.GuildText,
       ...(parent ? { parent: parent.id } : {}),
-      topic: `ticket-owner:${interaction.user.id};ticket-type:${type}${type === 'order' ? ';ticket-terms-required' : ''}${orderForm ? `;ticket-product:${orderForm.product}` : ''}`,
       permissionOverwrites,
       reason: `${type} ticket opened by ${interaction.user.tag}`,
     });
+    await channel.setTopic(
+      ticketChannelTopic(interaction.user.id, type, orderForm),
+      `${type} ticket metadata for ${interaction.user.tag}`,
+    );
     await sendV2(channel, {
       ...ticketManagerMentionPayload(settings),
       embeds: [ticketEmbed(type, interaction.user, orderForm, reportForm, othersForm)],
@@ -1395,43 +1421,7 @@ async function handleCommand(interaction) {
       return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
     }
     const user = interaction.options.getUser('user', true);
-    const orders = [];
-    for (let index = 1; index <= 5; index += 1) {
-      const suffix = index === 1 ? '' : index;
-      const rawItem = interaction.options.getString(`item${suffix}`, index === 1);
-      const rawLink = interaction.options.getString(`link${suffix}`, index === 1);
-      if (rawItem === null && rawLink === null) continue;
-      if (rawItem === null || rawLink === null) {
-        return interaction.reply({
-          content: `Provide both item${suffix ? ` ${index}` : ''} and link${suffix ? ` ${index}` : ''}.`,
-          ephemeral: true,
-        });
-      }
-      const item = rawItem.trim();
-      const link = rawLink.trim();
-      let parsedLink;
-      try {
-        parsedLink = new URL(link);
-      } catch {
-        return interaction.reply({
-          content: `Enter a valid http or https link for item${suffix ? ` ${index}` : ''}.`,
-          ephemeral: true,
-        });
-      }
-      if (!item || !['http:', 'https:'].includes(parsedLink.protocol) || /[|\s]/.test(link)) {
-        return interaction.reply({
-          content: `Enter a nonblank item and a valid http or https link for item${suffix ? ` ${index}` : ''}.`,
-          ephemeral: true,
-        });
-      }
-      orders.push({ item, link });
-    }
-    await interaction.deferReply({ ephemeral: true });
-    await sendV2(user, {
-      content: dmsOrderMessage(orders),
-      allowedMentions: { parse: [] },
-    });
-    return interaction.editReply({ content: `Order message sent to ${user}.` });
+    return interaction.showModal(dmsOrderFormModal(user.id));
   }
 
   if (['robuxform', 'openshop', 'closeshop'].includes(interaction.commandName)) {
@@ -1909,6 +1899,9 @@ client.on('interactionCreate', async (interaction) => {
     else if (interaction.isButton() && interaction.customId.startsWith('payment:')) await handlePaymentButton(interaction);
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket-close-reason:')) {
       await handleTicketCloseReasonModal(interaction);
+    }
+    else if (interaction.isModalSubmit() && interaction.customId.startsWith('dmsorder:form:')) {
+      await handleDmsOrderFormSubmit(interaction);
     }
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('vouch:form:')) {
       await handleVouchFormSubmit(interaction);
