@@ -170,7 +170,7 @@ test('queue confirmation includes the buyer, order details, and /order author', 
     preparedById: 'staff-1',
   });
 
-  assert.match(message, /^_ _\n\u2002{6}\*\*\( <:purplecandy:\d+> \)  from dolce vita !\*\*/);
+  assert.match(message, /^_ _\n\u2002{6}\*\*\( <:purpledonut:1557485667091746896> \)  from dolce vita !\*\*/);
   assert.match(message, /\n\u2002{4}yoυr order ιs noted, <@buyer-1>/);
   assert.match(message, /\n\u2002{3}━━━━━━━━━━  order detαιls  ━━━━━━━━━━/);
   assert.match(message, /\n\u2002{6}•  \( 2 \) — DEKOR/);

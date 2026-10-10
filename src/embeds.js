@@ -454,7 +454,7 @@ function queueConfirmationMessage(order) {
   const preparedBy = order.preparedById ? `<@${order.preparedById}>` : 'Not recorded';
   return [
     '_ _',
-    `${'\u2002'.repeat(6)}**( <:purplecandy:1557485716223828088> )  from dolce vita !**`,
+    `${'\u2002'.repeat(6)}**( <:purpledonut:1557485667091746896> )  from dolce vita !**`,
     `${'\u2002'.repeat(4)}yoυr order ιs noted, <@${order.customerId}> . . .`,
     '',
     `${'\u2002'.repeat(3)}━━━━━━━━━━  order detαιls  ━━━━━━━━━━`,
