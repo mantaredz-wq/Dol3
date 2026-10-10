@@ -194,7 +194,7 @@ function robuxAvailabilityMessage() {
     '_ _',
     '-# _ _              __viα plus !__',
     '-# _ _              __O-1 dαy procesing time__',
-    '-# _ _              __1rbx x .55__',
+    '-# _ _              __1rbx x .60__',
     '_ _ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ •',
   ].join('\n');
 }
@@ -450,33 +450,22 @@ function queueEmbed(orders) {
   return embed;
 }
 
-function centeredQueueLine(line) {
-  if (!line || line === '_ _') return line;
-  const visibleText = line
-    .replace(/<:[^:]+:\d+>/g, 'x')
-    .replace(/<@!?&?\d+>/g, '@username')
-    .replace(/[*_`]/g, '');
-  const padding = Math.max(0, Math.floor((48 - Array.from(visibleText).length) / 2));
-  return `${'\u2002'.repeat(padding)}${line}`;
-}
-
 function queueConfirmationMessage(order) {
   const preparedBy = order.preparedById ? `<@${order.preparedById}>` : 'Not recorded';
   return [
     '_ _',
-    `**( <:purplecandy:1557485716223828088> )  from dolce vita !**`,
-    `yoυr order ιs noted, <@${order.customerId}> . . .`,
+    `${'\u2002'.repeat(6)}**( <:purplecandy:1557485716223828088> )  from dolce vita !**`,
+    `${'\u2002'.repeat(4)}yoυr order ιs noted, <@${order.customerId}> . . .`,
     '',
-    '━━━━━━━━━━  order detαιls  ━━━━━━━━━━',
-    `•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`,
-    `•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`,
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-    `•  prepαred by ${preparedBy} . . .`,
-    '-# no cαncellαtιon / rush orders',
+    `${'\u2002'.repeat(3)}━━━━━━━━━━  order detαιls  ━━━━━━━━━━`,
+    `${'\u2002'.repeat(6)}•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`,
+    `${'\u2002'.repeat(6)}•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`,
+    '     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `_ _                      •  prepαred by ${preparedBy} . . .`,
+    '',
+    '-#  _ _                  no cαncellαtιon / rush orders<a:purpleribbon:1557485625102565538>',
     '_ _',
-  ].map((line) => (
-    line === '-# no cαncellαtιon / rush orders' ? line : centeredQueueLine(line)
-  )).join('\n');
+  ].join('\n');
 }
 
 function dmsOrderMessage(orders) {

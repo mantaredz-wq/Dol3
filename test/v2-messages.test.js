@@ -104,7 +104,7 @@ test('/robuxavail message matches the requested text exactly', () => {
     '_ _',
     '-# _ _              __viα plus !__',
     '-# _ _              __O-1 dαy procesing time__',
-    '-# _ _              __1rbx x .55__',
+    '-# _ _              __1rbx x .60__',
     '_ _ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ •',
   ].join('\n'));
 });

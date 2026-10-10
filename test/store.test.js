@@ -170,16 +170,14 @@ test('queue confirmation includes the buyer, order details, and /order author', 
     preparedById: 'staff-1',
   });
 
-  assert.match(message, /^_ _\n\u2002+\*\*\( <:purplecandy:\d+> \)  from dolce vita !\*\*/);
-  assert.match(message, /yoυr order ιs noted, <@buyer-1>/);
-  assert.match(message, /━━━━━━━━━━  order detαιls  ━━━━━━━━━━/);
-  assert.match(message, /\( 2 \) — DEKOR/);
-  assert.match(message, /pαιd vια GCash/);
-  assert.match(message, /•  prepαred by <@staff-1>/);
-  assert.match(message, /no cαncellαtιon \/ rush orders/);
-  assert.match(message, /\n\u2002+━━━━━━━━━━  order detαιls/);
-  assert.match(message, /\n\u2002+•  prepαred by/);
-  assert.match(message, /\n-# no cαncellαtιon \/ rush orders\n/);
+  assert.match(message, /^_ _\n\u2002{6}\*\*\( <:purplecandy:\d+> \)  from dolce vita !\*\*/);
+  assert.match(message, /\n\u2002{4}yoυr order ιs noted, <@buyer-1>/);
+  assert.match(message, /\n\u2002{3}━━━━━━━━━━  order detαιls  ━━━━━━━━━━/);
+  assert.match(message, /\n\u2002{6}•  \( 2 \) — DEKOR/);
+  assert.match(message, /\n\u2002{6}•  pαιd vια GCash/);
+  assert.match(message, /\n_ _ +•  prepαred by <@staff-1>/);
+  assert.match(message, /-#  _ _ +no cαncellαtιon \/ rush orders<a:purpleribbon:1557485625102565538>/);
+  assert.doesNotMatch(message, /cαncellαtιon \/ rush orders <a:purpleribbon/);
   assert.doesNotMatch(message, /(?:^|\n)##(?:\n|$)/);
 });
 
