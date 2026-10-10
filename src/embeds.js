@@ -450,25 +450,29 @@ function queueEmbed(orders) {
   return embed;
 }
 
-function centeredQueueLine(line) {
-  const visibleText = line
+function centeredQueueLines(lines) {
+  const longestLineLength = Math.max(...lines.map((line) => Array.from(line
     .replace(/<:[^:]+:\d+>/g, 'x')
     .replace(/<@!?&?\d+>/g, '@username')
-    .replace(/[*_`]/g, '');
-  const padding = Math.max(0, Math.floor((48 - Array.from(visibleText).length) / 2));
-  return `${'\u2002'.repeat(padding)}${line}`;
+    .replace(/[*_`]/g, '')).length));
+  const padding = Math.max(0, Math.floor((48 - longestLineLength) / 2));
+  return lines.map((line) => `${'\u2002'.repeat(padding)}${line}`);
 }
 
 function queueConfirmationMessage(order) {
   const preparedBy = order.preparedById ? `<@${order.preparedById}>` : 'Not recorded';
+  const [itemLine, paymentLine] = centeredQueueLines([
+    `•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`,
+    `•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`,
+  ]);
   return [
     '_ _',
     `${'\u2002'.repeat(6)}**( <:purpledonut:1557485667091746896> )  from dolce vita !**`,
     `${'\u2002'.repeat(4)}yoυr order ιs noted, <@${order.customerId}> . . .`,
     '',
     `${'\u2002'.repeat(3)}━━━━━━━━━━  order detαιls  ━━━━━━━━━━`,
-    centeredQueueLine(`•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`),
-    centeredQueueLine(`•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`),
+    itemLine,
+    paymentLine,
     '     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
     `_ _                      •  prepαred by ${preparedBy} . . .`,
     '',
