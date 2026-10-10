@@ -450,6 +450,15 @@ function queueEmbed(orders) {
   return embed;
 }
 
+function centeredQueueLine(line) {
+  const visibleText = line
+    .replace(/<:[^:]+:\d+>/g, 'x')
+    .replace(/<@!?&?\d+>/g, '@username')
+    .replace(/[*_`]/g, '');
+  const padding = Math.max(0, Math.floor((48 - Array.from(visibleText).length) / 2));
+  return `${'\u2002'.repeat(padding)}${line}`;
+}
+
 function queueConfirmationMessage(order) {
   const preparedBy = order.preparedById ? `<@${order.preparedById}>` : 'Not recorded';
   return [
@@ -458,8 +467,8 @@ function queueConfirmationMessage(order) {
     `${'\u2002'.repeat(4)}yoυr order ιs noted, <@${order.customerId}> . . .`,
     '',
     `${'\u2002'.repeat(3)}━━━━━━━━━━  order detαιls  ━━━━━━━━━━`,
-    `${'\u2002'.repeat(6)}•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`,
-    `${'\u2002'.repeat(6)}•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`,
+    centeredQueueLine(`•  ( ${order.quantity ?? 1} ) — ${order.items ?? order.item}`),
+    centeredQueueLine(`•  pαιd vια ${order.paymentMethod ?? 'Not specified'}`),
     '     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
     `_ _                      •  prepαred by ${preparedBy} . . .`,
     '',

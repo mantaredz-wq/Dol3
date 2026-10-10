@@ -173,8 +173,8 @@ test('queue confirmation includes the buyer, order details, and /order author', 
   assert.match(message, /^_ _\n\u2002{6}\*\*\( <:purpledonut:1557485667091746896> \)  from dolce vita !\*\*/);
   assert.match(message, /\n\u2002{4}yoυr order ιs noted, <@buyer-1>/);
   assert.match(message, /\n\u2002{3}━━━━━━━━━━  order detαιls  ━━━━━━━━━━/);
-  assert.match(message, /\n\u2002{6}•  \( 2 \) — DEKOR/);
-  assert.match(message, /\n\u2002{6}•  pαιd vια GCash/);
+  assert.match(message, /\n\u2002{8,}•  \( 2 \) — DEKOR/);
+  assert.match(message, /\n\u2002{8,}•  pαιd vια GCash/);
   assert.match(message, /\n_ _ +•  prepαred by <@staff-1>/);
   assert.match(message, /-#  _ _ +no cαncellαtιon \/ rush orders<a:purpleribbon:1557485625102565538>/);
   assert.doesNotMatch(message, /cαncellαtιon \/ rush orders <a:purpleribbon/);
