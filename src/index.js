@@ -130,7 +130,13 @@ async function getEligibleVouchTicket(guildId, ticketChannelId, userId) {
     return null;
   }
   const order = store.getLatestOrderForSource(guildId, channel.id, userId);
-  if (!order || order.status !== 'completed' || store.hasVouchForTicket(guildId, channel.id)) {
+  const finishedAt = new Date(order?.finishedAt ?? '').getTime();
+  if (!order
+    || order.status !== 'completed'
+    || !Number.isFinite(finishedAt)
+    || Date.now() > finishedAt + VOUCH_WINDOW_MS
+    || order.voidedAt
+    || store.hasVouchForTicket(guildId, channel.id)) {
     return null;
   }
   return { channel, order };
@@ -338,9 +344,14 @@ async function handleVouchPreviewButton(interaction) {
     if (!recordedVouch) {
       throw new Error(`Vouch already exists for ticket ${preview.ticketChannelId}.`);
     }
-    if (store.listCompletedWithinVouchWindow(preview.guildId, preview.userId, preview.vouchedAt).length) {
-      await updateVoidedRole(preview.guildId, preview.userId, false);
-    }
+    await updateVoidedRole(preview.guildId, preview.userId, false);
+    await updateMemberRole(
+      preview.guildId,
+      preview.userId,
+      SHOP_ANNOUNCEMENT_ROLE_ID,
+      true,
+      'shop announcement',
+    );
     let ownerDmSent = false;
     if (preview.warrantyDmUserId) {
       try {
@@ -501,25 +512,50 @@ function scheduleVoidCheckForOrder(order) {
     const vouchDeadline = finishedAt + VOUCH_WINDOW_MS;
     if (store.hasVouchWithinWindow(currentOrder.guildId, currentOrder.customerId, finishedAt, vouchDeadline)) return;
     const settings = store.getSettings(currentOrder.guildId);
-    const channelId = settings?.voidedChannelId;
-    if (!channelId) return;
-    try {
-      const channel = await client.channels.fetch(channelId);
-      if (!channel || channel.guildId !== currentOrder.guildId || !channel.isTextBased() || typeof channel.send !== 'function') {
-        return;
+    const voidReason = 'No Vouch = Voided';
+    store.markOrderVoided(currentOrder.id, voidReason);
+    await updateVoidedRole(currentOrder.guildId, currentOrder.customerId, true);
+
+    if (settings?.voidedChannelId) {
+      try {
+        const channel = await client.channels.fetch(settings.voidedChannelId);
+        if (!channel
+          || channel.guildId !== currentOrder.guildId
+          || !channel.isTextBased()
+          || typeof channel.send !== 'function') {
+          throw new Error(`Configured voided channel ${settings.voidedChannelId} is unavailable or not a sendable server text channel.`);
+        }
+        const user = await client.users.fetch(currentOrder.customerId).catch(() => null);
+        await sendV2(channel, {
+          content: voidedOrderMessage(
+            user ?? { id: currentOrder.customerId, username: `user-${currentOrder.customerId}` },
+            currentOrder.items ?? currentOrder.item ?? 'Unknown product',
+          ),
+          allowedMentions: { users: [currentOrder.customerId] },
+        });
+      } catch (error) {
+        console.error(`Could not post void notification for order ${currentOrder.id}:`, error);
       }
-      const user = await client.users.fetch(currentOrder.customerId).catch(() => null);
-      await sendV2(channel, {
-        content: voidedOrderMessage(
-          user ?? { id: currentOrder.customerId, username: `user-${currentOrder.customerId}` },
-          currentOrder.items ?? currentOrder.item ?? 'Unknown product',
-        ),
-        allowedMentions: { users: [currentOrder.customerId] },
-      });
-      await updateVoidedRole(currentOrder.guildId, currentOrder.customerId, true);
-      store.markOrderVoided(currentOrder.id, 'no vouch within 12hours');
+    }
+
+    try {
+      const ticketChannel = currentOrder.sourceChannelId
+        ? await client.channels.fetch(currentOrder.sourceChannelId)
+        : null;
+      if (ticketChannel
+        && ticketChannel.guildId === currentOrder.guildId
+        && ticketChannel.isTextBased()
+        && ticketOwnerId(ticketChannel) === currentOrder.customerId) {
+        await archiveAndDeleteTicket(
+          ticketChannel,
+          currentOrder.customerId,
+          client.user.id,
+          client.user.tag,
+          voidReason,
+        );
+      }
     } catch (error) {
-      console.error(`Could not void order ${currentOrder.id} after 12 hours without a vouch:`, error);
+      console.error(`Could not automatically close ticket for order ${currentOrder.id} after 12 hours without a vouch:`, error);
     }
   }, delay);
   scheduledVoidChecks.set(order.id, timeoutId);
@@ -528,12 +564,17 @@ function scheduleVoidCheckForOrder(order) {
 async function updateVoidedRole(guildId, userId, enabled) {
   const roleId = store.getSettings(guildId)?.voidedRoleId;
   if (!roleId) return;
+  await updateMemberRole(guildId, userId, roleId, enabled, 'voided');
+}
+
+async function updateMemberRole(guildId, userId, roleId, enabled, roleLabel) {
+  if (!roleId) return;
   try {
     const guild = await client.guilds.fetch(guildId);
     await setVoidedRole(guild, roleId, userId, enabled);
   } catch (error) {
     const action = enabled ? 'assign' : 'remove';
-    console.error(`Could not ${action} voided role ${roleId} for user ${userId}:`, error);
+    console.error(`Could not ${action} ${roleLabel} role ${roleId} for user ${userId}:`, error);
   }
 }
 
@@ -742,7 +783,7 @@ async function requestTicketClosure(interaction, channel, ownerId, source) {
 }
 
 async function closeTicketChannel(interaction, channel, ownerId, reason) {
-  const settings = store.getSettings(interaction.guildId);
+  const settings = store.getSettings(channel.guildId);
   if (!settings?.ticketTranscriptChannelId) {
     const response = {
       content: 'Ticket transcripts are not configured. Ask an administrator to run `/set ticket_transcript channel:#channel` before closing tickets.',
@@ -755,6 +796,21 @@ async function closeTicketChannel(interaction, channel, ownerId, reason) {
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply({ ephemeral: true });
   }
+  const transcriptChannel = await archiveAndDeleteTicket(
+    channel,
+    ownerId,
+    interaction.user.id,
+    interaction.user.tag,
+    reason,
+  );
+  return interaction.editReply(`Ticket closed and deleted. Transcript posted in ${transcriptChannel}.`);
+}
+
+async function archiveAndDeleteTicket(channel, ownerId, closedById, closedByTag, reason) {
+  const settings = store.getSettings(channel.guildId);
+  if (!settings?.ticketTranscriptChannelId) {
+    throw new Error(`Ticket transcript channel is not configured for guild ${channel.guildId}.`);
+  }
   const transcriptChannel = await client.channels.fetch(settings.ticketTranscriptChannelId);
   if (!transcriptChannel?.isTextBased() || typeof transcriptChannel.send !== 'function') {
     throw new Error(`Configured transcript channel ${settings.ticketTranscriptChannelId} is not a sendable text channel.`);
@@ -766,7 +822,7 @@ async function closeTicketChannel(interaction, channel, ownerId, reason) {
     channelId: channel.id,
     createdAt: channel.createdAt,
     ownerId,
-    closedById: interaction.user.id,
+    closedById,
     claimedById: claimedMatch?.[1],
     reason,
   });
@@ -776,8 +832,8 @@ async function closeTicketChannel(interaction, channel, ownerId, reason) {
     files: [transcriptFile],
     allowedMentions: { parse: [] },
   });
-  await channel.delete(`Ticket closed by ${interaction.user.tag}; transcript posted in ${transcriptChannel.id}`);
-  return interaction.editReply(`Ticket closed and deleted. Transcript posted in ${transcriptChannel}.`);
+  await channel.delete(`Ticket closed by ${closedByTag}; transcript posted in ${transcriptChannel.id}`);
+  return transcriptChannel;
 }
 
 function canUseOrderButtons(interaction) {
@@ -1331,7 +1387,7 @@ async function handleCommand(interaction) {
     }
     const user = interaction.options.getUser('user', true);
     const orders = [];
-    for (let index = 1; index <= 4; index += 1) {
+    for (let index = 1; index <= 5; index += 1) {
       const suffix = index === 1 ? '' : index;
       const rawItem = interaction.options.getString(`item${suffix}`, index === 1);
       const rawLink = interaction.options.getString(`link${suffix}`, index === 1);
@@ -1726,6 +1782,13 @@ async function handleButton(interaction) {
   const notificationFailures = [];
   if (action === 'complete') {
     scheduleVoidCheckForOrder(order);
+    await updateMemberRole(
+      order.guildId,
+      order.customerId,
+      SHOP_ANNOUNCEMENT_ROLE_ID,
+      false,
+      'shop announcement',
+    );
     await updateVoidedRole(order.guildId, order.customerId, true);
   }
   if (order.sourceChannelId) {

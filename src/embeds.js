@@ -10,7 +10,9 @@ const {
   MediaGalleryItemBuilder,
   MessageFlags,
   ModalBuilder,
+  SectionBuilder,
   TextDisplayBuilder,
+  ThumbnailBuilder,
   TextInputBuilder,
   TextInputStyle,
 } = require('discord.js');
@@ -180,7 +182,7 @@ function robuxFormContainer() {
 function openShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      '@𓏲﹕     dolcezza',
+      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}> 𓏲﹕     dolcezza`,
       '_ _',
       ':candy:  **Dolce Vita is now __open__**',
       '',
@@ -204,6 +206,7 @@ function openShopContainer() {
 function closeShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
       '_ _',
       ':candy:   **Dolce Vita is now closed**',
       '',
@@ -267,14 +270,16 @@ function giveawayContainer(giveaway, ended = false) {
 
 function paymentReminderContainer(serverIconUrl) {
   const container = new ContainerBuilder()
-    .setAccentColor(0x3478c7)
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      '゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.',
-    ));
+    .setAccentColor(0x3478c7);
+  const reminderText = '゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.';
   if (serverIconUrl) {
-    container.addMediaGalleryComponents(
-      new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(serverIconUrl)),
+    container.addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(reminderText))
+        .setThumbnailAccessory(new ThumbnailBuilder().setURL(serverIconUrl)),
     );
+  } else {
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(reminderText));
   }
   return container.addActionRowComponents(paymentReminderButtons());
 }
@@ -427,7 +432,6 @@ function queueConfirmationMessage(order) {
   const preparedBy = order.preparedById ? `<@${order.preparedById}>` : 'Not recorded';
   return [
     '_ _',
-    '##',
     '<:blank:1557365898216611841> ( <:purplecandy:1557485716223828088>    )   from dolce vita !',
     `<:blank:1557365898216611841>         yoυr order ιs noted, <@${order.customerId}> . . .`,
     '<:blank:1557365898216611841>   ═══  order detαιls :  ═══',

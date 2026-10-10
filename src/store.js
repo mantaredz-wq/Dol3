@@ -361,6 +361,16 @@ class OrderStore {
     return order;
   }
 
+  markOrderVoided(orderId, reason, voidedAt = new Date().toISOString()) {
+    const state = this.read();
+    const order = state.orders.find((entry) => entry.id === orderId);
+    if (!order || order.status !== 'completed' || order.voidedAt) return null;
+    order.voidedAt = voidedAt;
+    order.voidReason = reason;
+    this.write(state);
+    return order;
+  }
+
   hasVouchWithinWindow(guildId, userId, fromDate, toDate) {
     const from = new Date(fromDate).getTime();
     const to = new Date(toDate).getTime();

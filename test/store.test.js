@@ -175,6 +175,7 @@ test('queue confirmation includes the buyer, order details, and /order author', 
   assert.match(message, /pαιd vια GCash/);
   assert.match(message, /prepαred  by  <@staff-1>/);
   assert.match(message, /no   cαncellαtιon   \/   rush   orders/);
+  assert.doesNotMatch(message, /(?:^|\n)##(?:\n|$)/);
 });
 
 test('queue list includes quantity and the /order author', () => {
@@ -427,6 +428,27 @@ test('vouch validity is limited to the completed order 12-hour window', () => {
     store.listCompletedWithinVouchWindow('guild-1', 'buyer-1', new Date(finishedAt.getTime() + VOUCH_WINDOW_MS + 1)),
     [],
   );
+});
+
+test('completed orders can be marked voided once with the automatic-close reason', () => {
+  const store = createStore();
+  const order = store.addOrder({
+    guildId: 'guild-1',
+    customerId: 'buyer-1',
+    sourceChannelId: 'ticket-1',
+    items: 'DEKOR',
+    paymentMethod: 'GCash',
+    supporterId: 'staff-1',
+    quantity: 1,
+  });
+  store.finishOrder(order.id, 'completed');
+
+  const voidedAt = '2026-10-10T12:00:00.000Z';
+  const voidedOrder = store.markOrderVoided(order.id, 'No Vouch = Voided', voidedAt);
+  assert.equal(voidedOrder.voidedAt, voidedAt);
+  assert.equal(voidedOrder.voidReason, 'No Vouch = Voided');
+  assert.equal(store.getOrder(order.id).voidedAt, voidedAt);
+  assert.equal(store.markOrderVoided(order.id, 'No Vouch = Voided'), null);
 });
 
 test('giveaway entries, winners, bans, and tracked message counts persist', () => {

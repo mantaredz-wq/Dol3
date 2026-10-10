@@ -209,6 +209,16 @@ module.exports = [
       .setName('link4')
       .setDescription('Fourth order link to include as a spoiler')
       .setRequired(false)
+      .setMaxLength(1024))
+    .addStringOption((option) => option
+      .setName('item5')
+      .setDescription('Fifth item name')
+      .setRequired(false)
+      .setMaxLength(200))
+    .addStringOption((option) => option
+      .setName('link5')
+      .setDescription('Fifth order link to include as a spoiler')
+      .setRequired(false)
       .setMaxLength(1024)),
   new SlashCommandBuilder()
     .setName('vouch')

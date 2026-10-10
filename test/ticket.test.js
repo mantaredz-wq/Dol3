@@ -509,19 +509,22 @@ test('multiplication result is formatted as a colorless V2 container', () => {
   ]);
 });
 
-test('payment reminder V2 container includes the server icon and pay/no buttons inside', () => {
+test('payment reminder V2 container shows the server icon as a right-side thumbnail', () => {
   const container = paymentReminderContainer('https://cdn.example/server.png').toJSON();
   assert.equal(container.type, 17);
   assert.equal(container.accent_color, 0x3478c7);
-  assert.match(
-    container.components[0].content,
-    /^゛ \*\*Dolce Vita payment reminders:/,
-  );
-  assert.deepEqual(container.components[1], {
-    type: 12,
-    items: [{ media: { url: 'https://cdn.example/server.png' } }],
+  assert.deepEqual(container.components[0], {
+    type: 9,
+    components: [{
+      type: 10,
+      content: '゛ **Dolce Vita payment reminders:**  ⸝⸝   .ᐟ 𑣲\n» send the payment details via screenshot.\n» pls complete your payment within 12hrs.\n» once payment is verified, the order will be processed.\n» no rush of orders!\n» pls click `pay` to proceed, `no` to cancel.',
+    }],
+    accessory: {
+      type: 11,
+      media: { url: 'https://cdn.example/server.png' },
+    },
   });
-  const buttonRow = container.components[2];
+  const buttonRow = container.components[1];
   assert.equal(buttonRow.type, 1);
   assert.deepEqual(
     buttonRow.components.map(({ label, custom_id }) => [label, custom_id]),
@@ -740,7 +743,7 @@ test('/queuelist is registered as a slash command', () => {
   assert.ok(commands.find((entry) => entry.name === 'queuelist'));
 });
 
-test('/dmsorder requires a user and first item/link, with three optional item/link pairs', () => {
+test('/dmsorder requires a user and first item/link, with four optional item/link pairs', () => {
   const command = commands.find((entry) => entry.name === 'dmsorder');
   assert.ok(command);
   assert.deepEqual(
@@ -755,6 +758,8 @@ test('/dmsorder requires a user and first item/link, with three optional item/li
       { name: 'link3', required: false },
       { name: 'item4', required: false },
       { name: 'link4', required: false },
+      { name: 'item5', required: false },
+      { name: 'link5', required: false },
     ],
   );
 });
@@ -770,17 +775,18 @@ test('order DM message preserves the warranty text and spoiler-wraps the link', 
   assert.match(message, /tysm for buying!/);
 });
 
-test('order DM message supports four item/link pairs in order', () => {
+test('order DM message supports five item/link pairs in order', () => {
   const message = dmsOrderMessage([
     { item: 'PREMS', link: 'https://example.com/1' },
     { item: 'BOBUX', link: 'https://example.com/2' },
     { item: 'DEKOR', link: 'https://example.com/3' },
     { item: 'SVBOWCH', link: 'https://example.com/4' },
+    { item: 'NITRO', link: 'https://example.com/5' },
   ]);
-  const itemPositions = ['PREMS', 'BOBUX', 'DEKOR', 'SVBOWCH']
+  const itemPositions = ['PREMS', 'BOBUX', 'DEKOR', 'SVBOWCH', 'NITRO']
     .map((item) => message.indexOf(`(${item})`));
   assert.deepEqual([...itemPositions].sort((a, b) => a - b), itemPositions);
-  for (let index = 1; index <= 4; index += 1) {
+  for (let index = 1; index <= 5; index += 1) {
     assert.ok(message.includes(`(||https://example.com/${index}||)`));
   }
 });
