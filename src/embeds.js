@@ -179,6 +179,26 @@ function robuxFormContainer() {
     ].join('\n')));
 }
 
+function robuxAvailabilityMessage() {
+  return [
+    `<@&${SHOP_ANNOUNCEMENT_ROLE_ID}>`,
+    '_ _',
+    '_ _          - ⭑𓂃       **rbx via plus   **   Ი︵𐑼',
+    '_ _ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ •',
+    '-# _ _                ` 1OO  rbx  `  ~~      ~~  ` ₱ 60  `',
+    '-# _ _                ` 2OO  rbx  `  ~~      ~~  ` ₱ 120 `',
+    '-# _ _                ` 3OO  rbx  `  ~~      ~~  ` ₱ 180 `',
+    '-# _ _                ` 4OO  rbx  `  ~~      ~~  ` ₱ 240 `',
+    '-# _ _                ` 5OO  rbx  `  ~~      ~~  ` ₱ 300 `',
+    '-# _ _                ` 1OOO rbx  `  ~~      ~~  ` ₱ 600 `',
+    '_ _',
+    '-# _ _              __viα plus !__',
+    '-# _ _              __O-1 dαy procesing time__',
+    '-# _ _              __1rbx x .55__',
+    '_ _ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ •',
+  ].join('\n');
+}
+
 function openShopContainer() {
   return new ContainerBuilder()
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
@@ -421,8 +441,8 @@ function queueEmbed(orders) {
 
   for (const order of orders.slice(0, 25)) {
     embed.addFields({
-      name: `#${orderReference(order)} - ${LABELS[order.status]} (Ticket came from ${order.sourceChannelId ? `<#${order.sourceChannelId}>` : 'Not recorded'})`,
-      value: `(${order.items ?? order.item}) - (quantity): ${order.quantity ?? 1}\nprepared by: ${order.preparedById ? `<@${order.preparedById}>` : 'Not recorded'}\nBuyer: <@${order.customerId}>`,
+      name: `#${orderReference(order)} - ${LABELS[order.status]} ${order.sourceChannelId ? `<#${order.sourceChannelId}>` : 'Not recorded'}`,
+      value: `${order.items ?? order.item} - quantity: ${order.quantity ?? 1}\nprepared by: ${order.preparedById ? `<@${order.preparedById}>` : 'Not recorded'}\nBuyer: <@${order.customerId}>`,
       inline: false,
     });
   }
@@ -454,7 +474,9 @@ function queueConfirmationMessage(order) {
     `•  prepαred by ${preparedBy} . . .`,
     '-# no cαncellαtιon / rush orders',
     '_ _',
-  ].map(centeredQueueLine).join('\n');
+  ].map((line) => (
+    line === '-# no cαncellαtιon / rush orders' ? line : centeredQueueLine(line)
+  )).join('\n');
 }
 
 function dmsOrderMessage(orders) {
@@ -763,6 +785,7 @@ module.exports = {
   orderCompletionReminderEmbed,
   multiplicationContainer,
   robuxFormContainer,
+  robuxAvailabilityMessage,
   openShopContainer,
   closeShopContainer,
   giveawayContainer,

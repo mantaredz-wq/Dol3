@@ -179,6 +179,7 @@ test('queue confirmation includes the buyer, order details, and /order author', 
   assert.match(message, /no cαncellαtιon \/ rush orders/);
   assert.match(message, /\n\u2002+━━━━━━━━━━  order detαιls/);
   assert.match(message, /\n\u2002+•  prepαred by/);
+  assert.match(message, /\n-# no cαncellαtιon \/ rush orders\n/);
   assert.doesNotMatch(message, /(?:^|\n)##(?:\n|$)/);
 });
 
@@ -196,8 +197,8 @@ test('queue list shows its title, count, ticket source, quantity, /order author,
 
   assert.equal(embed.title, 'Dolce Vita Order Queue');
   assert.equal(embed.description, '1 active order');
-  assert.match(embed.fields[0].name, /^#DEKOR - Waiting \(Ticket came from <#ticket-1>\)$/);
-  assert.match(embed.fields[0].value, /^\(DEKOR\) - \(quantity\): 3/);
+  assert.match(embed.fields[0].name, /^#DEKOR - Waiting <#ticket-1>$/);
+  assert.match(embed.fields[0].value, /^DEKOR - quantity: 3/);
   assert.match(embed.fields[0].value, /prepared by: <@staff-1>/);
   assert.match(embed.fields[0].value, /Buyer: <@buyer-1>/);
 });

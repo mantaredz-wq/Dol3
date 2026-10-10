@@ -23,8 +23,13 @@ function isOrderStaff(interaction, settings = {}) {
     || interaction.memberPermissions?.has(PermissionFlagsBits.Administrator);
 }
 
+function hasConfiguredOwnerRole(interaction, settings = {}) {
+  return Boolean(settings?.ownerRoleId && memberHasRole(interaction, settings.ownerRoleId));
+}
+
 module.exports = {
   memberHasRole,
   isStaff,
   isOrderStaff,
+  hasConfiguredOwnerRole,
 };

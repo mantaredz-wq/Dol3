@@ -146,6 +146,9 @@ module.exports = [
     .setName('robuxform')
     .setDescription('Post the Robux fill-up form.'),
   new SlashCommandBuilder()
+    .setName('robuxavail')
+    .setDescription('Post the Robux Via Plus availability and prices.'),
+  new SlashCommandBuilder()
     .setName('openshop')
     .setDescription('Post the shop-open announcement.'),
   new SlashCommandBuilder()
@@ -165,7 +168,7 @@ module.exports = [
       .setMaxLength(2000)),
   new SlashCommandBuilder()
     .setName('dmsorder')
-    .setDescription('Send an order and warranty message to a user.')
+    .setDescription('Send an order and warranty message to a user (configured /setowner role only).')
     .addUserOption((option) => option
       .setName('user')
       .setDescription('Buyer to message')

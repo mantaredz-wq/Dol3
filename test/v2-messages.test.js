@@ -5,8 +5,10 @@ const {
   closeShopContainer,
   openShopContainer,
   robuxFormContainer,
+  robuxAvailabilityMessage,
   vouchLinkButton,
 } = require('../src/embeds');
+const commands = require('../src/commands');
 const {
   v2Payload,
   wrapInteractionResponses,
@@ -84,6 +86,27 @@ test('Robux and shop announcement builders return colorless V2 containers', () =
     assert.equal(container.accent_color, undefined);
     assert.match(container.components[0].content, expectedText);
   }
+});
+
+test('/robuxavail message matches the requested text exactly', () => {
+  assert.ok(commands.some((command) => command.name === 'robuxavail'));
+  assert.equal(robuxAvailabilityMessage(), [
+    '<@&1555603985694588940>',
+    '_ _',
+    '_ _          - ⭑𓂃       **rbx via plus   **   Ი︵𐑼',
+    '_ _ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ •',
+    '-# _ _                ` 1OO  rbx  `  ~~      ~~  ` ₱ 60  `',
+    '-# _ _                ` 2OO  rbx  `  ~~      ~~  ` ₱ 120 `',
+    '-# _ _                ` 3OO  rbx  `  ~~      ~~  ` ₱ 180 `',
+    '-# _ _                ` 4OO  rbx  `  ~~      ~~  ` ₱ 240 `',
+    '-# _ _                ` 5OO  rbx  `  ~~      ~~  ` ₱ 300 `',
+    '-# _ _                ` 1OOO rbx  `  ~~      ~~  ` ₱ 600 `',
+    '_ _',
+    '-# _ _              __viα plus !__',
+    '-# _ _              __O-1 dαy procesing time__',
+    '-# _ _              __1rbx x .55__',
+    '_ _ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ • ┈ • ୨୧ • ┈ •',
+  ].join('\n'));
 });
 
 test('close-shop container has the requested notice and announcement button', () => {

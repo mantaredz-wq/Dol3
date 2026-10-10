@@ -39,6 +39,7 @@ const {
   dmsOrderMessage,
   dmsOrderFormModal,
   dmsOrderFormButtons,
+  robuxAvailabilityMessage,
   reportTicketModal,
   ticketButtons,
   ticketCloseConfirmationEmbed,
@@ -86,7 +87,12 @@ const {
 } = require('./v2-messages');
 const commands = require('./commands');
 const { parseGiveawayDuration, selectGiveawayWinners } = require('./giveaway-utils');
-const { memberHasRole, isOrderStaff, isStaff } = require('./permissions');
+const {
+  memberHasRole,
+  isOrderStaff,
+  isStaff,
+  hasConfiguredOwnerRole,
+} = require('./permissions');
 const { setVoidedRole } = require('./voided-role');
 
 const store = new OrderStore();
@@ -286,8 +292,8 @@ async function handleVouchFormSubmit(interaction) {
 }
 
 async function handleDmsOrderFormSubmit(interaction) {
-  if (!isStaff(interaction)) {
-    return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
+  if (!hasConfiguredOwnerRole(interaction, store.getSettings(interaction.guildId))) {
+    return interaction.reply({ content: 'Only the configured `/setowner` role can send order messages.', ephemeral: true });
   }
   const [, , formId, startItemText] = interaction.customId.split(':');
   const form = pendingDmsOrderForms.get(formId);
@@ -333,8 +339,9 @@ async function handleDmsOrderFormButton(interaction) {
     pendingDmsOrderForms.delete(formId);
     return interaction.reply({ content: 'This order form expired. Run `/dmsorder` again to start a new one.', ephemeral: true });
   }
-  if (!isStaff(interaction) || form.staffId !== interaction.user.id) {
-    return interaction.reply({ content: 'Only the staff member who started this order form can continue it.', ephemeral: true });
+  if (!hasConfiguredOwnerRole(interaction, store.getSettings(interaction.guildId))
+    || form.staffId !== interaction.user.id) {
+    return interaction.reply({ content: 'Only the configured `/setowner` role and the staff member who started this form can continue it.', ephemeral: true });
   }
   form.expiresAt = Date.now() + DMS_ORDER_FORM_DURATION_MS;
   if (action === 'next') {
@@ -1481,8 +1488,8 @@ async function handleCommand(interaction) {
   }
 
   if (interaction.commandName === 'dmsorder') {
-    if (!isStaff(interaction)) {
-      return interaction.reply({ content: 'You do not have permission to send order messages.', ephemeral: true });
+    if (!hasConfiguredOwnerRole(interaction, store.getSettings(interaction.guildId))) {
+      return interaction.reply({ content: 'Only the configured `/setowner` role can send order messages.', ephemeral: true });
     }
     const user = interaction.options.getUser('user', true);
     for (const [formId, form] of pendingDmsOrderForms) {
@@ -1498,6 +1505,22 @@ async function handleCommand(interaction) {
       sending: false,
     });
     return interaction.showModal(dmsOrderFormModal(formId));
+  }
+
+  if (interaction.commandName === 'robuxavail') {
+    if (!isStaff(interaction)) {
+      return interaction.reply({ content: 'You do not have permission to post shop messages.', ephemeral: true });
+    }
+    const channel = interaction.channel;
+    if (!channel?.isTextBased() || typeof channel.send !== 'function') {
+      return interaction.reply({ content: 'Run this command in a server text channel.', ephemeral: true });
+    }
+    await interaction.deferReply({ ephemeral: true });
+    await sendV2(channel, {
+      content: robuxAvailabilityMessage(),
+      allowedMentions: { parse: [], roles: [SHOP_ANNOUNCEMENT_ROLE_ID] },
+    });
+    return interaction.deleteReply();
   }
 
   if (['robuxform', 'openshop', 'closeshop'].includes(interaction.commandName)) {
